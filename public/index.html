@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b4381f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Biswamil">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Biswamil Movement Log</title>
+<style>
+:root{--bg:#faf8f5;--card:#fff;--ink:#1d1b19;--mute:#6f6a64;--line:#e6e1da;--acc:#b4381f;--accink:#fff;--warn:#b7791f;--ok:#2f7d4f;--red:#fbe3de;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171513;--card:#211e1b;--ink:#f1ece6;--mute:#a39c93;--line:#35302b;--acc:#e0634a;--accink:#171513;--warn:#e0a94f;--ok:#5fbf85;--red:#3a211c}}
+:root[data-theme="dark"]{--bg:#171513;--card:#211e1b;--ink:#f1ece6;--mute:#a39c93;--line:#35302b;--acc:#e0634a;--accink:#171513;--warn:#e0a94f;--ok:#5fbf85;--red:#3a211c}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}
+.sub{color:var(--mute);font-size:13px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
+button.p{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+button.s{padding:5px 10px;font-size:13px}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input,select,textarea{font:inherit;width:100%;padding:11px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.tabs,.seg{display:flex;gap:6px;margin:8px 0 12px;overflow-x:auto}.tabs button,.seg button{flex:1;white-space:nowrap}
+.c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.stat b{font-size:24px;display:block}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.loc{font-weight:600;color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.line{padding:6px 0;border-top:1px solid var(--line);font-size:14px}.line:first-of-type{border-top:0}
+.bl{color:var(--acc);font-weight:600}
+.err{color:var(--acc);font-size:14px;min-height:1.2em;margin-top:8px}
+.banner{background:var(--card);border:1px solid var(--warn);color:var(--warn);padding:10px;border-radius:8px;margin-bottom:10px;display:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;display:none;z-index:20}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:9}.modal.show{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow:auto}
+.sheet h2{margin:0 0 4px;font-size:18px}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--line);white-space:nowrap}
+tr.out td{background:var(--red)}tr.go{cursor:pointer}
+.empty{color:var(--mute);text-align:center;padding:24px 0}
+.msg{border-left:3px solid var(--acc);padding:6px 10px;margin:8px 0;background:var(--card);border-radius:6px}
+.msg.re{border-left-color:var(--line);margin-left:14px}
+.chk{display:inline-flex;align-items:center;gap:6px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font-size:14px}.chk input{width:auto;margin:0}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div><h1>Biswamil Movement Log</h1><div class="sub">Team Management HQ</div></div><div id="hi"></div></div>
+  <div class="banner" id="banner"></div>
+  <div id="days"></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</div>
+<div class="toast" id="toast"></div>
+<datalist id="cl"></datalist><datalist id="al"></datalist><datalist id="stl"></datalist>
+<datalist id="rl"><option value="Washroom break"><option value="Lunch / snacks"><option value="Waiting for match"><option value="Match running late"><option value="Resting"><option value="Medical help"><option value="Gone for the day"></datalist>
+
+<div class="modal" id="mLogin"><div class="sheet">
+  <h2>Enter access code</h2><div class="sub">Ask Team Management HQ for the code.</div>
+  <label>Access code</label><input id="lgCode" type="password" autocomplete="off" autocapitalize="off">
+  <div class="err" id="lgErr"></div><button class="p" id="lgGo" style="width:100%;margin-top:6px">Continue</button>
+</div></div>
+<div class="modal" id="mWel"><div class="sheet">
+  <h2>Welcome</h2><div class="sub">Tell us who you are once. It is remembered on this phone.</div>
+  <label>Your name</label><input id="wlName" list="stl" placeholder="Your name">
+  <label>Your designation</label><select id="wlRole"><option>Vol</option><option>OC</option><option>Head</option><option>Chief</option><option>SATC</option><option>Chair</option></select>
+  <div class="c" style="margin-top:14px"><b>How it works</b><br>At the main desk: <b>New entry</b> with the college and total strength. After that, every move: <b>college, how many, from, to</b>, then Send.</div>
+  <div class="err" id="wlErr"></div><button class="p" id="wlSave" style="width:100%">Start</button>
+</div></div>
+<div class="modal" id="mCsv"><div class="sheet">
+  <h2>Copy for Google Sheets</h2><div class="sub">Select all, copy, then paste into a sheet.</div>
+  <textarea id="csv" rows="10"></textarea>
+  <div style="display:flex;gap:8px;margin-top:12px"><button data-x="mCsv" style="flex:1">Close</button><button class="p" id="csvSel" style="flex:1">Select all</button></div>
+</div></div>
+<div class="modal" id="mAdd"><div class="sheet">
+  <h2>Add TM</h2><div class="sub">One per line: Name, designation (default Vol). Everyone is placed at the station below.</div>
+  <label>Station</label><select id="aLoc"></select>
+  <label>Names</label><textarea id="aTxt" rows="8" placeholder="Riya Sharma, OC&#10;Aman Verma, Vol"></textarea>
+  <div class="err" id="aErr"></div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button data-x="mAdd" style="flex:1">Cancel</button><button class="p" id="aSave" style="flex:1">Add</button></div>
+</div></div>
+<div class="modal" id="mCol"><div class="sheet"><div id="cdBody"></div><button data-x="mCol" style="width:100%;margin-top:12px">Close</button></div></div>
+
+<script>
+/* Talks to the Render server. Gives the app the same small db/user/downloads API it used on claude.ai. */
+var AUTH={code:"",role:""};
+(function(){
+  function api(path,body){
+    return fetch(path,{method:"POST",headers:{"content-type":"application/json","x-code":AUTH.code},body:JSON.stringify(body)}).then(function(r){
+      if(r.status===401){try{localStorage.setItem("bt_code","")}catch(e){}location.reload();throw new Error("unauthorized")}
+      if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})}
+  function collection(c){
+    return {
+      doc:function(id){return {
+        set:function(d){return api("/api/set",{coll:c,id:id,data:d})},
+        delete:function(){return api("/api/delete",{coll:c,id:id})}}},
+      onSnapshot:function(cb){
+        var map={},tm=null,saved=0,key="snap:"+c;
+        function emit(){tm=null;cb({docs:Object.keys(map).map(function(id){return {id:id,data:function(){return map[id]}}})});
+          if(Date.now()-saved>5000){saved=Date.now();try{var j=JSON.stringify(map);if(j.length<900000)localStorage.setItem(key,j)}catch(e){}}}
+        function soon(){if(!tm)tm=setTimeout(emit,150)}
+        try{var old=localStorage.getItem(key);if(old){map=JSON.parse(old);emit()}}catch(e){}
+        var es=new EventSource("/api/stream?coll="+encodeURIComponent(c)+"&code="+encodeURIComponent(AUTH.code));
+        es.addEventListener("snap",function(e){map={};JSON.parse(e.data).forEach(function(d){map[d.id]=d.data});soon()});
+        es.addEventListener("ch",function(e){var m=JSON.parse(e.data);if(m.data===null)delete map[m.id];else map[m.id]=m.data;soon()});
+        return function(){es.close();clearTimeout(tm)}}};
+  }
+  window.claude={use:async function(n){
+    if(n==="db")return {collection:collection};
+    if(n==="user")return {canEdit:async function(){return AUTH.role==="hq"}};
+    if(n==="downloads")return {save:async function(o){var b=new Blob([o.data],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500)}};
+    return null}};
+})();
+</script>
+<script>
+var ENTRY="Main Desk",OUT="Outside campus",LEFT="Left campus";
+var DEFAULT_VENUES=["Main Desk","Gate 1","Registration Desk","Auditorium","Main Stage","Food Court","Open Air Theatre","Rest Area"];
+var ROLES=["Chair","SATC","Chief","Head","OC","Vol"];
+var DB=null,isEd=false,venues=DEFAULT_VENUES.slice(),fest={start:""},viewDay=0,tab="log",mode="move";
+var moves={},conts={},notes={},reents={},colleges={},staff={},black={},unsubs=[];
+var evSel=[],xs=[],withOn=false,withName="",pendDel=null,pendWarn=null,curCol="",sq="",bq="",eq="",rq="",rf="all";
+var $=function(i){return document.getElementById(i)};
+function esc(s){var d=document.createElement("div");d.textContent=s==null?"":String(s);return d.innerHTML}
+function clock(t){var d=new Date(t),n=new Date(),tm=d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});return d.toDateString()===n.toDateString()?tm:d.toLocaleDateString([],{day:"numeric",month:"short"})+", "+tm}
+function sv(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function ld(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+function me(){return {name:ld("bt_name").trim(),role:ld("bt_role")||"Vol"}}
+function slug(n){return (n||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"x"}
+function banner(t){var b=$("banner");b.textContent=t;b.style.display="block"}
+function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(function(){e.style.display="none"},2500)}
+function opts(l,sel){return l.map(function(v){return "<option"+(v===sel?" selected":"")+">"+esc(v)+"</option>"}).join("")}
+function open(id){$(id).classList.add("show")}function shut(id){$(id).classList.remove("show")}
+function setErr(id,m){var e=$(id);if(e)e.textContent=m||""}
+function allV(){return venues.indexOf(ENTRY)<0?[ENTRY].concat(venues):venues}
+function fromList(){return [OUT].concat(allV())}
+function toList(){return allV().concat([LEFT])}
+function stList(){return ["HQ"].concat(allV())}
+function todayDay(){var s=fest.start;if(!s)return 1;var a=new Date(s+"T00:00:00"),b=new Date();b.setHours(0,0,0,0);return Math.min(3,Math.max(1,Math.round((b-a)/864e5)+1))}
+function D(){return isEd&&viewDay?viewDay:todayDay()}
+
+/* ---------- writes (per-entry docs; unsent entries wait on the phone) ---------- */
+var outT=null;
+function outbox(){try{return JSON.parse(ld("bt_out")||"[]")}catch(e){return []}}
+function saveOut(a){sv("bt_out",JSON.stringify(a))}
+function put(c,id,data){
+  if(!DB)return Promise.reject(new Error("Not connected. Check your internet and reload."));
+  return DB.collection(c).doc(id).set(data).catch(function(){var a=outbox();a.push({c:c,id:id,data:data});saveOut(a);pending();startOut();return "queued"})}
+function startOut(){if(!outT)outT=setInterval(flush,20000)}
+function flush(){var a=outbox();if(!a.length||!DB){if(!a.length&&outT){clearInterval(outT);outT=null}return}
+  var it=a[0];DB.collection(it.c).doc(it.id).set(it.data).then(function(){var b=outbox();b.shift();saveOut(b);pending();flush()}).catch(function(){})}
+function pending(){var n=outbox().length,b=$("banner");
+  if(n){banner(n+" entry(ies) saved on this phone, waiting for connection. They keep their original time and send automatically.");b.setAttribute("data-p","1")}
+  else if(b.getAttribute("data-p")){b.style.display="none";b.setAttribute("data-p","")}}
+window.addEventListener("online",flush);
+function del(c,id){return DB&&DB.collection(c).doc(id).delete().catch(function(er){banner("Could not delete: "+(er&&er.message||er))})}
+
+/* ---------- derived data for the viewed day ---------- */
+function rowsMap(){
+  var L={};
+  Object.keys(conts).forEach(function(k){var c=conts[k];L[k]={key:k,name:c.college,sports:c.sports||"",regStaff:c.staff||"",reg:c.regAt||0,v:{},total:0,last:0,staff:{}}});
+  Object.keys(moves).map(function(k){return moves[k]}).sort(function(a,b){return a.t-b.t}).forEach(function(m){
+    var k=slug(m.college),r=L[k]=L[k]||{key:k,name:m.college,sports:"",regStaff:"",reg:m.t,v:{},total:0,last:0,staff:{}};
+    if(m.from!==OUT)r.v[m.from]=(r.v[m.from]||0)-m.n;else r.total+=m.n;
+    r.v[m.to]=(r.v[m.to]||0)+m.n;r.last=m.t;r.staff[m.by]=1;if(m.partner)r.staff[m.partner]=1});
+  Object.keys(L).forEach(function(k){var r=L[k];r.left=Math.max(0,r.v[LEFT]||0);r.on=Math.max(0,r.total-r.left);
+    r.where=Object.keys(r.v).filter(function(v){return v!==LEFT&&r.v[v]>0}).sort(function(a,b){return r.v[b]-r.v[a]}).map(function(v){return r.v[v]+" "+v});
+    var names={};(r.regStaff||"").split(",").forEach(function(x){x=x.trim();if(x)names[x]=1});Object.keys(r.staff).forEach(function(x){names[x]=1});r.people=Object.keys(names)});
+  return L}
+function rowsList(){var L=rowsMap();return Object.keys(L).map(function(k){return L[k]}).sort(function(a,b){return a.reg-b.reg})}
+function blFor(c){var k=slug(c);return Object.keys(black).map(function(i){return black[i]}).filter(function(b){return slug(b.college)===k})}
+function tops(){return Object.keys(notes).map(function(k){return notes[k]}).filter(function(x){return !x.parent})}
+function repliesOf(id){return Object.keys(notes).map(function(k){return notes[k]}).filter(function(x){return x.parent===id}).sort(function(a,b){return a.t-b.t})}
+function latestRemark(name){var k=slug(name),l=tops().filter(function(x){return slug(x.college)===k}).sort(function(a,b){return b.t-a.t});return l[0]||null}
+function defFrom(c){var r=rowsMap()[slug(c)];if(!r)return OUT;var best=OUT,n=0;Object.keys(r.v).forEach(function(v){if(v!==LEFT&&r.v[v]>n){n=r.v[v];best=v}});return best}
+function sportsOf(c){var r=rowsMap()[slug(c)];return r&&r.sports?r.sports.split(",").map(function(x){return x.trim()}).filter(Boolean):[]}
+
+/* ---------- drawing (throttled; paused while the screen is off) ---------- */
+var rt=null,dirty=false;
+function schedule(){if(rt)return;rt=setTimeout(function(){rt=null;if(document.hidden){dirty=true;return}draw()},300)}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&dirty){dirty=false;draw()}});
+function draw(){
+  var tabs=[["log","Log"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
+  if(!isEd&&tab!=="log")tab="log";
+  var snap={},act=document.activeElement&&document.activeElement.id;
+  document.querySelectorAll("#view [id],#cdBody [id]").forEach(function(el){if("value" in el)snap[el.id]=el.value});
+  var dn=D();
+  $("days").innerHTML=isEd?'<div class="seg">'+[1,2,3].map(function(d){return '<button data-day="'+d+'"'+(dn===d?' class="on"':'')+'>Day '+d+(d===todayDay()?' ·today':'')+'</button>'}).join("")+'</div>':'<div class="sub" style="margin-bottom:6px">Day '+dn+'</div>';
+  $("tabs").innerHTML=isEd?tabs.map(function(t){return '<button data-t="'+t[0]+'"'+(tab===t[0]?' class="on"':'')+'>'+t[1]+'</button>'}).join(""):"";
+  var n=me().name;$("hi").innerHTML=n?'<span class="sub">'+esc(n)+' ('+esc(me().role)+')</span> <button class="s" data-chg="1">Change</button>':"";
+  $("view").innerHTML=tab==="log"?vLog():tab==="board"?vBoard():tab==="staff"?vStaff():tab==="re"?vRe():tab==="all"?vAll():vSetup();
+  if($("mCol").classList.contains("show")&&curCol)$("cdBody").innerHTML=vCol(curCol);
+  Object.keys(snap).forEach(function(id){var el=$(id);if(el&&snap[id]!==""&&"value" in el)el.value=snap[id]});
+  if(act&&$(act)&&($(act).tagName==="INPUT"||$(act).tagName==="TEXTAREA")){var e=$(act);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}
+  var nm={};rowsList().forEach(function(r){nm[r.name]=1});
+  $("cl").innerHTML=Object.keys(nm).sort().map(function(c){return '<option value="'+esc(c)+'">'}).join("");
+  $("al").innerHTML=Object.keys(colleges).map(function(k){return '<option value="'+esc(colleges[k].name)+'">'}).join("");
+  $("stl").innerHTML=Object.keys(staff).map(function(k){return '<option value="'+esc(staff[k].name)+'">'}).join("")}
+
+function msgBlock(top,canDone,replyBox){
+  var rs=repliesOf(top.id);
+  return '<div class="msg"><div class="sub">'+esc(top.by)+' ('+esc(top.role)+') → '+esc(top.to)+' · '+esc(top.college)+' · '+clock(top.t)+(top.done?' · <b>Done</b>':'')+'</div><div>'+esc(top.text)+'</div>'
+   +rs.map(function(r){return '<div class="msg re"><div class="sub">'+esc(r.by)+' · '+clock(r.t)+'</div>'+esc(r.text)+'</div>'}).join("")
+   +(replyBox?'<div class="two" style="margin-top:6px;grid-template-columns:3fr 1fr"><input id="rp-'+esc(top.id)+'" placeholder="Reply"><button class="s" data-rp="'+esc(top.id)+'">Send</button></div>':'')
+   +(canDone?'<button class="s" data-done="'+esc(top.id)+'" style="margin-top:6px">'+(top.done?"Reopen":"Mark done")+'</button>':'')+'</div>'}
+
+function vLog(){
+  var m=me(),mine=Object.keys(moves).map(function(k){return moves[k]}).filter(function(x){return x.by===m.name}).sort(function(a,b){return b.t-a.t}).slice(0,5);
+  var forMe=tops().filter(function(x){return !x.done&&(x.to===m.name||x.to==="All")}).sort(function(a,b){return b.t-a.t});
+  var msgs=forMe.length?'<div class="c"><b>Messages for you ('+forMe.length+')</b>'+forMe.map(function(x){return msgBlock(x,true,true)}).join("")+'</div>':"";
+  var seg='<div class="seg"><button data-mode="move"'+(mode==="move"?' class="on"':'')+'>Movement</button><button data-mode="entry"'+(mode==="entry"?' class="on"':'')+'>New entry</button></div>';
+  var form;
+  if(mode==="entry")form='<div class="c"><b>New entry at the main desk</b><div class="sub">Enter the total strength as they come in. Use this again for re-entry or late arrivals.</div>'
+   +'<label>College / team</label><input id="eCol" list="al" placeholder="College name">'
+   +'<label>Total people entering now</label><input id="eN" type="number" min="1" inputmode="numeric">'
+   +'<label>Events (comma separated)</label><input id="eSp" placeholder="e.g. Dance, Nukkad, Band">'
+   +'<label>TM handling (names, comma separated)</label><input id="eSt" placeholder="e.g. Viju, Husena">'
+   +'<div class="err" id="eErr"></div><button class="p" id="eGo" style="width:100%;margin-top:6px;padding:14px">Register entry</button></div>';
+  else{
+    var xr=xs.map(function(r,i){return '<div class="two" style="margin-top:8px"><input data-xi="'+i+'" data-xf="c" list="cl" placeholder="Another college" value="'+esc(r.c)+'"><input data-xi="'+i+'" data-xf="n" type="number" min="1" inputmode="numeric" placeholder="People" value="'+esc(r.n)+'"></div>'}).join("");
+    var cv=$("fCol")?$("fCol").value:"",sp=sportsOf(cv);
+    form='<div class="c"><b>Log a movement</b>'
+     +'<label>College</label><input id="fCol" list="cl" placeholder="College name">'
+     +'<label>How many people</label><input id="fN" type="number" min="1" inputmode="numeric">'+xr
+     +'<div><button class="s" data-addc="1" style="margin-top:8px">+ Add another college (same from and to)</button></div>'
+     +'<div class="two"><div><label>From</label><select id="fFrom">'+opts(fromList())+'</select></div><div><label>To</label><select id="fTo">'+opts(toList())+'</select></div></div>'
+     +(sp.length?'<label>Events (tick all that apply)</label><div style="display:flex;flex-wrap:wrap">'+sp.map(function(x){return '<label class="chk"><input type="checkbox" data-ev="'+esc(x)+'"'+(evSel.indexOf(x)>-1?' checked':'')+'> '+esc(x)+'</label>'}).join("")+'</div>':'')
+     +'<label>Remark (optional)</label><input id="fRm" list="rl" placeholder="Pick or type">'
+     +(withOn?'<label>Also with (name)</label><input id="fWith" list="stl" value="'+esc(withName)+'">':'<div><button class="s" data-with="1" style="margin-top:8px">+ Someone is with me</button></div>')
+     +'<div class="err" id="fErr"></div><button class="p" id="send" style="width:100%;margin-top:6px;padding:14px">Send</button></div>'}
+  return msgs+seg+form+'<div class="sub" style="margin:14px 0 6px">Your recent entries</div>'
+   +(mine.length?mine.map(function(x){return '<div class="c row"><div><b>'+esc(x.n)+'</b> · '+esc(x.college)+'<div class="sub">'+esc(x.from)+' → '+esc(x.to)+' · '+clock(x.t)+(x.remark?' · '+esc(x.remark):'')+'</div></div><button class="s" data-del="'+esc(x.id)+'">'+(pendDel===x.id?"Tap again":"Delete")+'</button></div>'}).join(""):'<div class="empty">Nothing logged yet.</div>');
+}
+
+function vBoard(){
+  var L=rowsList(),q=bq.toLowerCase(),tot=0,on=0,left=0;
+  L.forEach(function(r){tot+=r.total;on+=r.on;left+=r.left});
+  var show=L.filter(function(r){return !q||r.name.toLowerCase().indexOf(q)>-1});
+  return '<div class="stats"><div class="stat"><b>'+tot+'</b><span class="sub">Entered today</span></div><div class="stat"><b>'+on+'</b><span class="sub">On campus now</span></div><div class="stat"><b>'+left+'</b><span class="sub">Left</span></div></div>'
+   +'<div class="row" style="gap:8px;margin-bottom:10px"><input id="bq" placeholder="Find a college" value="'+esc(bq)+'"><button class="p" id="expB" style="white-space:nowrap">Export</button></div>'
+   +(show.length?'<div class="c scroll"><table><tr><th>S.No</th><th>College</th><th>Where now</th><th>Events</th><th>Total</th><th>On campus</th><th>TM</th><th>Remark</th></tr>'
+   +show.map(function(r,i){var lr=latestRemark(r.name),open=tops().filter(function(x){return slug(x.college)===r.key&&!x.done}).length;
+     var replied=tops().some(function(x){if(slug(x.college)!==r.key||x.done)return false;var rs=repliesOf(x.id);return rs.length&&rs[rs.length-1].by!==x.by});
+     return '<tr class="go'+(r.total>0&&r.on===0?' out':'')+'" data-col="'+esc(r.key)+'"><td>'+(L.indexOf(r)+1)+'</td><td><b>'+(blFor(r.name).length?'<span class="bl">⚠ </span>':'')+esc(r.name)+'</b></td><td>'+(r.on===0&&r.total>0?'<b>OUT</b>':esc(r.where.join(" · ")||"—"))+(r.left&&r.on?' · '+r.left+' left':'')+'</td><td>'+esc(r.sports)+'</td><td>'+r.total+'</td><td>'+r.on+'</td><td>'+esc(r.people.join(", "))+'</td><td>'+(lr?esc(lr.text)+(open?' <span class="chip">'+open+' open</span>':'')+(replied?' <span class="chip">replied</span>':''):'')+'</td></tr>'}).join("")+'</table></div><div class="sub">Tap a row for details, history and messages. Red = whole contingent has left.</div>'
+   :'<div class="empty">No colleges entered yet for Day '+D()+'.</div>');
+}
+function vCol(k){
+  var r=rowsMap()[k];if(!r)return '<div class="empty">Not found.</div>';
+  var hist=Object.keys(moves).map(function(i){return moves[i]}).filter(function(m){return slug(m.college)===k}).sort(function(a,b){return b.t-a.t}).slice(0,15);
+  var th=tops().filter(function(x){return slug(x.college)===k}).sort(function(a,b){return b.t-a.t});
+  var names=["All"].concat(Object.keys(staff).map(function(i){return staff[i].name}).sort());
+  return '<h2>'+esc(r.name)+'</h2><div class="sub">Day '+D()+' · total '+r.total+' · on campus '+r.on+' · left '+r.left+'</div>'
+   +'<div style="margin:8px 0"><b>Where now:</b> '+esc(r.where.join(" · ")||(r.total?"All left":"—"))+'</div>'
+   +'<label>Events</label><input id="cdSp" value="'+esc(r.sports)+'"><label>TM handling</label><input id="cdSt" value="'+esc(r.regStaff)+'"><button class="s" data-cdsave="'+esc(k)+'" style="margin-top:8px">Save</button>'
+   +'<div class="c" style="margin-top:12px"><b>Message a TM member</b><label>To</label><select id="cdTo">'+opts(names)+'</select><label>Message</label><input id="cdTx" placeholder="e.g. move to Auditorium before 3 PM"><button class="p s" data-cdpost="'+esc(k)+'" style="margin-top:8px">Post</button><div class="err" id="cdErr"></div></div>'
+   +(th.length?th.map(function(x){return msgBlock(x,true,true)}).join(""):'<div class="sub">No messages yet.</div>')
+   +'<div class="sub" style="margin-top:12px">Recent movements</div>'+(hist.length?hist.map(function(m){return '<div class="line"><b>'+esc(m.n)+'</b> '+esc(m.sport||"")+' '+esc(m.from)+' → '+esc(m.to)+' <span class="sub">'+clock(m.t)+' · '+esc(m.by)+(m.remark?' · '+esc(m.remark):'')+'</span></div>'}).join(""):'<div class="sub">None.</div>');
+}
+function lastHandled(name){
+  var mv=Object.keys(moves).map(function(k){return moves[k]}).filter(function(m){return m.by===name}).sort(function(a,b){return b.t-a.t});
+  if(!mv.length)return "";var g=mv[0].grp||mv[0].id,same=mv.filter(function(m){return (m.grp||m.id)===g});
+  return same.map(function(m){return m.n+" "+m.college}).join(", ")+" → "+same[0].to+" at "+clock(same[0].t)}
+function vStaff(){
+  var all=Object.keys(staff).map(function(k){return staff[k]}),q=sq.toLowerCase();
+  var br=all.filter(function(x){return x.status==="break"}).length,np=all.filter(function(x){return !x.loc}).length,by={};
+  all.filter(function(x){return !q||x.name.toLowerCase().indexOf(q)>-1}).forEach(function(x){var k=x.loc||"Not placed";(by[k]=by[k]||[]).push(x)});
+  var order=stList().concat(Object.keys(by).filter(function(k){return stList().indexOf(k)<0&&k!=="Not placed"})).concat(["Not placed"]).filter(function(k){return by[k]});
+  return '<div class="stats"><div class="stat"><b>'+all.length+'</b><span class="sub">TM</span></div><div class="stat"><b>'+br+'</b><span class="sub">On break</span></div><div class="stat"><b>'+np+'</b><span class="sub">Not placed</span></div></div>'
+   +'<div class="row" style="gap:8px;margin-bottom:10px"><input id="sq" placeholder="Find a person" value="'+esc(sq)+'"><button class="p" id="addStaff" style="white-space:nowrap">+ Add TM</button></div>'
+   +'<div class="sub" style="margin-bottom:8px">Stations update when someone logs a movement. Breaks are set here by HQ only.</div>'
+   +(order.length?'<div class="grid">'+order.map(function(k){
+     return '<div class="c"><div class="row"><span class="loc">'+esc(k)+'</span><span class="sub">'+by[k].length+' TM</span></div>'
+     +by[k].sort(function(a,b){return ROLES.indexOf(a.role)-ROLES.indexOf(b.role)||a.name.localeCompare(b.name)}).map(function(x){
+       var id=slug(x.name),lh=lastHandled(x.name),sl=stList();if(x.loc&&sl.indexOf(x.loc)<0)sl=sl.concat([x.loc]);
+       return '<div class="line"><b>'+esc(x.name)+'</b> <span class="sub">'+esc(x.role)+'</span>'+(x.status==="break"?' <span class="bl">· On break since '+clock(x.updatedAt)+'</span>':'')
+        +(lh?'<div class="sub">Last: '+esc(lh)+'</div>':'')
+        +'<div class="two" style="margin-top:6px"><select data-st="'+esc(id)+'">'+(x.loc?'':'<option value="" selected>Not placed</option>')+opts(sl,x.loc)+'</select>'
+        +'<span style="display:flex;gap:6px"><button class="s" data-sbrk="'+esc(id)+'">'+(x.status==="break"?"Back":"Break")+'</button><button class="s" data-sdel="'+esc(id)+'">'+(pendDel==="s:"+id?"Tap again":"Remove")+'</button></span></div></div>'}).join("")+'</div>'}).join("")+'</div>'
+    :'<div class="empty">No TM members yet. Tap + Add TM to place everyone in one go.</div>');
+}
+function vRe(){
+  var L=rowsMap(),q=rq.toLowerCase(),list=Object.keys(colleges).map(function(k){return {key:k,name:colleges[k].name}});
+  Object.keys(L).forEach(function(k){if(!colleges[k])list.push({key:k,name:L[k].name})});
+  var rows=list.map(function(c){var r=L[c.key],re=reents[c.key]||{};var st=r&&r.on>0?"on":(r&&r.total>0?"left":"not");
+    return {c:c,r:r,re:re,st:st}}).filter(function(x){return (!q||x.c.name.toLowerCase().indexOf(q)>-1)&&(rf==="all"||(rf==="yes"&&x.re.status==="yes")||(rf==="no"&&x.re.status==="no")||(rf==="left"&&x.st==="left")||(rf==="none"&&x.st!=="on"))})
+    .sort(function(a,b){return a.c.name.localeCompare(b.c.name)});
+  var chips=[["all","All"],["left","Left today"],["none","Not on campus"],["yes","Will return"],["no","Not returning"]];
+  return '<div class="sub" style="margin-bottom:8px">Day '+D()+' re-entry. Mark whether colleges that are out will come back. When they enter at the desk they show as on campus.</div>'
+   +'<input id="rq" placeholder="Find a college" value="'+esc(rq)+'" style="margin-bottom:8px"><div class="seg">'+chips.map(function(c){return '<button data-rf="'+c[0]+'"'+(rf===c[0]?' class="on"':'')+'>'+c[1]+'</button>'}).join("")+'</div>'
+   +(rows.length?rows.map(function(x){var re=x.re,id=esc(x.c.key);
+     return '<div class="c"><div class="row"><b>'+esc(x.c.name)+'</b><span class="chip">'+(x.st==="on"?"On campus ("+x.r.on+")":x.st==="left"?"Left today":"Not entered today")+'</span></div>'
+     +(x.r&&x.r.left?'<div class="sub">'+x.r.left+' of '+x.r.total+' left'+(x.r.last?' · last move '+clock(x.r.last):'')+'</div>':'')
+     +'<div class="two" style="margin-top:8px"><select data-re="'+id+'" data-f="status"><option value=""'+(!re.status?" selected":"")+'>Unknown</option><option value="yes"'+(re.status==="yes"?" selected":"")+'>Will return</option><option value="no"'+(re.status==="no"?" selected":"")+'>Not returning</option></select>'
+     +'<input data-re="'+id+'" data-f="expected" type="number" min="0" inputmode="numeric" placeholder="Expected people" value="'+esc(re.expected||"")+'"></div>'
+     +'<input data-re="'+id+'" data-f="note" placeholder="Note (optional)" value="'+esc(re.note||"")+'" style="margin-top:8px">'
+     +(re.by?'<div class="sub" style="margin-top:4px">Set by '+esc(re.by)+' at '+clock(re.t)+'</div>':'')+'</div>'}).join(""):'<div class="empty">No colleges here.</div>');
+}
+function vAll(){
+  var q=eq.toLowerCase(),a=Object.keys(moves).map(function(k){return moves[k]}).sort(function(x,y){return y.t-x.t}).filter(function(m){return !q||[m.college,m.by,m.from,m.to,m.remark,m.sport].join(" ").toLowerCase().indexOf(q)>-1});
+  return '<div class="row" style="margin-bottom:10px;gap:8px"><input id="eq" placeholder="Search college, person or venue" value="'+esc(eq)+'"><button class="p" id="expE" style="white-space:nowrap">Export</button></div>'
+   +'<div class="sub" style="margin-bottom:6px">Day '+D()+' · '+a.length+' entries</div><div class="c scroll"><table><tr><th>Time</th><th>By</th><th>College</th><th>People</th><th>Events</th><th>From → To</th><th>Remark</th><th></th></tr>'
+   +a.slice(0,300).map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+esc(m.from)+' → '+esc(m.to)+'</td><td>'+esc((m.remark||"")+(m.partner?" (with "+m.partner+")":""))+'</td><td><button class="s" data-del="'+esc(m.id)+'">'+(pendDel===m.id?"Tap again":"Delete")+'</button></td></tr>'}).join("")+'</table></div>'
+   +(a.length>300?'<div class="sub">Showing latest 300. Export has everything.</div>':'');
+}
+function vSetup(){
+  var bl=Object.keys(black).map(function(k){return black[k]}).sort(function(a,b){return b.t-a.t});
+  return '<div class="c"><b>Fest start date (Day 1)</b><div class="sub">Everyone logs into the right day automatically. Currently: Day '+todayDay()+'.</div><div class="two" style="margin-top:8px"><input id="fs" type="date" value="'+esc(fest.start)+'"><button class="p" data-fs="1">Save</button></div></div>'
+   +'<div class="c"><b>Venues</b><div class="sub">Changes show for everyone straight away. "Outside campus" and "Left campus" are always there.</div><div class="two" style="margin-top:8px"><input id="vN" placeholder="New venue name"><button class="p" data-v="add">Add venue</button></div><div class="err" id="vErr"></div>'
+   +allV().map(function(v,i){return '<div class="line row"><span>'+esc(v)+'</span>'+(v===ENTRY?'<span class="sub">entry point</span>':'<button class="s" data-v="del" data-i="'+venues.indexOf(v)+'">Remove</button>')+'</div>'}).join("")+'</div>'
+   +'<div class="c"><b>Clear test data</b><div class="sub">Deletes everything logged for Day '+D()+' (entries, colleges, messages, re-entry marks) and the colleges list. Use it after a trial run, before the fest starts. This cannot be undone.</div><button class="s" data-wipe="1" style="margin-top:8px">'+(pendDel==="wipe"?"Tap again to delete everything for Day "+D():"Clear Day "+D())+'</button></div>'
+   +'<div class="c"><b>Blacklist</b><label>College</label><input id="bC" list="al"><label>Person\'s name</label><input id="bP"><label>Reason (optional)</label><input id="bW"><div class="err" id="bErr"></div><button class="p" data-bl="add" style="width:100%;margin-top:6px">Add</button></div>'
+   +bl.map(function(b){return '<div class="c row"><div><b>'+esc(b.person)+'</b> · '+esc(b.college)+'<div class="sub">'+esc(b.reason||"No reason noted")+' · '+esc(b.by)+' · '+clock(b.t)+'</div></div><button class="s" data-bd="'+esc(b.id)+'">Remove</button></div>'}).join("");
+}
+
+/* ---------- staff + exports ---------- */
+function setStaff(name,role,patch){
+  var id=slug(name),o=staff[id]||{name:name,role:role,loc:"",status:"on"};
+  var nd=Object.assign({},o,patch,{updatedAt:Date.now(),updatedBy:me().name||"HQ"});staff[id]=nd;return put("staff",id,nd)}
+$("aSave").onclick=function(){
+  var lines=$("aTxt").value.split("\n").map(function(l){return l.trim()}).filter(Boolean),loc=$("aLoc").value;
+  if(!lines.length){setErr("aErr","Add at least one name.");return}
+  lines.forEach(function(l){var p=l.split(","),nm=p[0].trim(),r=(p[1]||"").trim(),role=ROLES.filter(function(x){return x.toLowerCase()===r.toLowerCase()})[0]||"Vol";
+    if(nm)setStaff(nm,role,{role:role,loc:loc,status:"on"})});
+  $("aTxt").value="";shut("mAdd");draw();toast(lines.length+" added")};
+function fmt(t){var d=new Date(t),p=function(n){return (n<10?"0":"")+n};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())}
+function toCsv(rows){return rows.map(function(r){return r.map(function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'}).join(",")}).join("\n")}
+async function exportCsv(kind){
+  var rows;
+  if(kind==="board"){rows=[["S.No","College","Where now","Events","Total strength","On campus now","Left","TM","Latest remark"]];
+    rowsList().forEach(function(r,i){var lr=latestRemark(r.name);rows.push([i+1,r.name,r.on===0&&r.total>0?"OUT":r.where.join(" · "),r.sports,r.total,r.on,r.left,r.people.join(", "),lr?lr.text:""])})}
+  else{rows=[["Time","Name","Designation","College","People","Events","From","To","Remark","Also with"]];
+    Object.keys(moves).map(function(k){return moves[k]}).sort(function(a,b){return a.t-b.t}).forEach(function(m){rows.push([fmt(m.t),m.by,m.role,m.college,m.n,m.sport||"",m.from,m.to,m.remark||"",m.partner||""])})}
+  var csv=toCsv(rows),dl=null;try{dl=await claude.use("downloads")}catch(e){}
+  if(dl){try{await dl.save({filename:"biswamil-day"+D()+"-"+kind+".csv",data:csv});return}catch(e){if(e&&e.code==="declined")return}}
+  $("csv").value=csv;open("mCsv")}
+
+/* ---------- actions ---------- */
+function need(){if(!me().name){open("mWel");return false}return true}
+function setDefaults(){var c=$("fCol");if(!c||!$("fFrom"))return;var f=defFrom(c.value);if(fromList().indexOf(f)>-1)$("fFrom").value=f;draw()}
+function stationFor(f,to){return to===LEFT?(f===OUT?null:f):to}
+function send(){
+  if(!need())return;
+  var f=$("fFrom").value,to=$("fTo").value,rm=$("fRm").value.trim(),w=withOn&&$("fWith")?$("fWith").value.trim():"",sp=evSel.join(", ");
+  var rows=[{c:$("fCol").value.trim(),n:parseInt($("fN").value,10)}].concat(xs.map(function(r){return {c:r.c.trim(),n:parseInt(r.n,10)}}));
+  var bad=rows.some(function(r){return (r.c&&!(r.n>0))||(!r.c&&r.n>0)});rows=rows.filter(function(r){return r.c&&r.n>0});
+  if(bad||!rows.length){setErr("fErr","Enter the college and how many people for each row.");return}
+  if(f===to){setErr("fErr","From and To are the same place.");return}
+  var L=rowsMap(),over=[];
+  rows.forEach(function(r){var x=L[slug(r.c)];if(!x)over.push(r.c+" has no entry today");else if(f!==OUT&&(x.v[f]||0)<r.n)over.push("only "+Math.max(0,x.v[f]||0)+" of "+r.c+" logged at "+f)});
+  var wk=JSON.stringify([rows,f,to]);
+  if(over.length&&pendWarn!==wk){pendWarn=wk;setErr("fErr","Check: "+over.join("; ")+". Tap Send again to log it anyway.");return}
+  pendWarn=null;
+  var t=Date.now(),base="m"+t.toString(36)+Math.random().toString(36).slice(2,5),m=me(),cn="m"+D();
+  var ds=rows.map(function(r,i){return {id:base+"-"+i,grp:base,college:r.c,n:r.n,from:f,to:to,sport:sp,by:m.name,role:m.role,remark:rm,partner:w,t:t}});
+  ds.forEach(function(d){moves[d.id]=d});
+  $("fCol").value="";$("fN").value="";$("fRm").value="";xs=[];evSel=[];withOn=false;withName="";setErr("fErr");
+  var st=stationFor(f,to),pl=st?{loc:st}:{};
+  var ops=ds.map(function(d){return put(cn,d.id,d)});
+  ops.push(setStaff(m.name,m.role,Object.assign({role:m.role,status:"on"},pl)));
+  if(w&&staff[slug(w)])ops.push(setStaff(w,staff[slug(w)].role,pl));
+  draw();$("fTo").value=to;toast("Logged at "+clock(t));
+  Promise.all(ops).catch(function(er){setErr("fErr","Could not save: "+(er&&er.message||er))})}
+function entry(){
+  if(!need())return;
+  var c=$("eCol").value.trim(),n=parseInt($("eN").value,10),sp=$("eSp").value.trim(),st=$("eSt").value.trim();
+  if(!c||!(n>0)){setErr("eErr","Enter the college and the total number of people.");return}
+  var k=slug(c),x=rowsMap()[k],t=Date.now(),m=me(),id="m"+t.toString(36)+Math.random().toString(36).slice(2,5),D0=D();
+  var meta=Object.assign({},conts[k]||{},{college:(conts[k]&&conts[k].college)||c,sports:sp||(conts[k]&&conts[k].sports)||"",staff:st||(conts[k]&&conts[k].staff)||"",regAt:(conts[k]&&conts[k].regAt)||t,regBy:(conts[k]&&conts[k].regBy)||m.name});
+  var d={id:id,grp:id,college:meta.college,n:n,from:OUT,to:ENTRY,sport:"",by:m.name,role:m.role,remark:x&&x.left>0?"Re-entry":"Entry",partner:"",t:t};
+  conts[k]=meta;moves[id]=d;
+  var ops=[put("c"+D0,k,meta),put("m"+D0,id,d),setStaff(m.name,m.role,{role:m.role,status:"on",loc:ENTRY})];
+  if(!colleges[k]||colleges[k].lastDay!==D0){colleges[k]={name:meta.college,lastDay:D0};ops.push(put("colleges",k,colleges[k]))}
+  ["eCol","eN","eSp","eSt"].forEach(function(i){$(i).value=""});setErr("eErr");draw();toast("Entry logged at "+clock(t));
+  Promise.all(ops).catch(function(er){setErr("eErr","Could not save: "+(er&&er.message||er))})}
+function postNote(top,college,to,text){
+  var t=Date.now(),m=me(),id="n"+t.toString(36)+Math.random().toString(36).slice(2,4);
+  var nt={id:id,parent:top||"",college:college,to:to,text:text,by:m.name,role:m.role,t:t,done:false};notes[id]=nt;return put("n"+D(),id,nt)}
+
+document.addEventListener("click",function(e){
+  var t=e.target,a;
+  if(t.id==="send"){send();return}
+  if(t.id==="eGo"){entry();return}
+  if(t.id==="expB"){exportCsv("board");return}
+  if(t.id==="expE"){exportCsv("entries");return}
+  if(t.id==="csvSel"){$("csv").focus();$("csv").select();return}
+  if(t.id==="addStaff"){$("aLoc").innerHTML=opts(stList());setErr("aErr");open("mAdd");return}
+  if((a=t.getAttribute("data-day"))){viewDay=+a;subDay();draw();return}
+  if((a=t.getAttribute("data-t"))){tab=a;draw();return}
+  if((a=t.getAttribute("data-mode"))){mode=a;draw();return}
+  if((a=t.getAttribute("data-rf"))){rf=a;draw();return}
+  if((a=t.getAttribute("data-x"))){shut(a);return}
+  if(t.getAttribute("data-chg")){$("wlName").value=me().name;$("wlRole").value=me().role;setErr("wlErr");open("mWel");return}
+  if(t.getAttribute("data-addc")){xs.push({c:"",n:""});draw();return}
+  if(t.getAttribute("data-with")){withOn=true;draw();return}
+  var tr=t.closest&&t.closest("tr[data-col]");if(tr&&!t.closest("button")){curCol=tr.getAttribute("data-col");$("cdBody").innerHTML=vCol(curCol);open("mCol");return}
+  if((a=t.getAttribute("data-rp"))){var el=$("rp-"+a),tx=el&&el.value.trim();if(!tx||!need())return;var top=notes[a];el.value="";postNote(a,top?top.college:"",top?top.by:"",tx).then(function(){draw()});draw();return}
+  if((a=t.getAttribute("data-done"))){var n0=notes[a];if(!n0)return;n0=Object.assign({},n0,{done:!n0.done});notes[a]=n0;put("n"+D(),a,n0);draw();return}
+  if((a=t.getAttribute("data-cdpost"))){var tx2=$("cdTx").value.trim();if(!tx2){setErr("cdErr","Type a message.");return}if(!need())return;
+    var r=rowsMap()[a];postNote("",r?r.name:a,$("cdTo").value,tx2);$("cdTx").value="";draw();toast("Message posted");return}
+  if((a=t.getAttribute("data-cdsave"))){var c0=conts[a]||{college:(rowsMap()[a]||{}).name||a,regAt:Date.now(),regBy:me().name};var nc=Object.assign({},c0,{sports:$("cdSp").value.trim(),staff:$("cdSt").value.trim()});conts[a]=nc;put("c"+D(),a,nc);draw();toast("Saved");return}
+  if((a=t.getAttribute("data-del"))){
+    if(pendDel!==a){pendDel=a;draw();return}
+    pendDel=null;delete moves[a];draw();del("m"+D(),a);return}
+  if((a=t.getAttribute("data-brk"))){return}
+  if((a=t.getAttribute("data-sbrk"))){var s1=staff[a];if(s1){setStaff(s1.name,s1.role,{status:s1.status==="break"?"on":"break"});draw()}return}
+  if((a=t.getAttribute("data-sdel"))){if(pendDel!=="s:"+a){pendDel="s:"+a;draw();return}pendDel=null;delete staff[a];draw();del("staff",a);return}
+  if(t.getAttribute("data-wipe")){if(pendDel!=="wipe"){pendDel="wipe";draw();return}pendDel=null;var d9=D();
+    Object.keys(moves).forEach(function(i){del("m"+d9,i)});Object.keys(conts).forEach(function(i){del("c"+d9,i)});Object.keys(notes).forEach(function(i){del("n"+d9,i)});Object.keys(reents).forEach(function(i){del("r"+d9,i)});Object.keys(colleges).forEach(function(i){del("colleges",i)});
+    moves={};conts={};notes={};reents={};colleges={};draw();toast("Cleared");return}
+  if(t.getAttribute("data-fs")){fest.start=$("fs").value;put("config","fest",{start:fest.start});resub();toast("Saved");return}
+  if(t.getAttribute("data-bl")==="add"){
+    var c=$("bC").value.trim(),p=$("bP").value.trim();if(!c||!p){setErr("bErr","Enter the college and the person's name.");return}if(!need())return;
+    var id="b"+Date.now().toString(36)+Math.random().toString(36).slice(2,4);
+    put("blacklist",id,{id:id,college:c,person:p,reason:$("bW").value.trim(),by:me().name,t:Date.now()}).catch(function(er){setErr("bErr",String(er&&er.message||er))});return}
+  if((a=t.getAttribute("data-bd"))){del("blacklist",a);return}
+  if((a=t.getAttribute("data-v"))){
+    var i=parseInt(t.getAttribute("data-i"),10),l=venues.slice();
+    if(a==="add"){var n=$("vN").value.trim();if(!n)return;if(allV().indexOf(n)>-1){setErr("vErr","Already in the list.");return}l.push(n)}else l.splice(i,1);
+    venues=l;draw();put("config","venues",{list:l,updatedAt:Date.now()})}
+});
+document.addEventListener("input",function(e){
+  var id=e.target.id;
+  if(id==="bq"){bq=e.target.value;draw()}else if(id==="eq"){eq=e.target.value;draw()}else if(id==="sq"){sq=e.target.value;draw()}else if(id==="rq"){rq=e.target.value;draw()}
+  else if(id==="fWith")withName=e.target.value;
+  var xi=e.target.getAttribute&&e.target.getAttribute("data-xi");if(xi!=null&&xs[+xi])xs[+xi][e.target.getAttribute("data-xf")]=e.target.value});
+document.addEventListener("change",function(e){
+  var el=e.target,a;
+  if(el.getAttribute&&el.getAttribute("data-ev")!=null){var v=el.getAttribute("data-ev"),i=evSel.indexOf(v);if(el.checked&&i<0)evSel.push(v);else if(!el.checked&&i>-1)evSel.splice(i,1);return}
+  if(el.id==="fCol"){evSel=[];setDefaults();return}
+  if(el.id==="eCol"){var k=slug(el.value),c=conts[k];if(c){if(!$("eSp").value)$("eSp").value=c.sports||"";if(!$("eSt").value)$("eSt").value=c.staff||""}return}
+  if((a=el.getAttribute&&el.getAttribute("data-st"))&&staff[a]){setStaff(staff[a].name,staff[a].role,{loc:el.value});draw();return}
+  if((a=el.getAttribute&&el.getAttribute("data-re"))){
+    var k2=a,o=Object.assign({},reents[k2]||{},{college:(rowsMap()[k2]||colleges[k2]||{}).name||(colleges[k2]||{}).name||k2,by:me().name||"HQ",t:Date.now()});
+    o[el.getAttribute("data-f")]=el.value;reents[k2]=o;put("r"+D(),k2,o);toast("Saved")}});
+$("wlSave").onclick=function(){var n=$("wlName").value.trim();if(!n){setErr("wlErr","Please enter your name.");return}
+  sv("bt_name",n);sv("bt_role",$("wlRole").value);shut("mWel");if(DB)setStaff(n,$("wlRole").value,{role:$("wlRole").value});draw()};
+
+/* ---------- live data: only the viewed day is listened to ---------- */
+function snapInto(target,fn){return function(s){var o={};s.docs.forEach(function(d){var v=d.data()||{};v.id=v.id||d.id;o[d.id]=v});fn(o);schedule()}}
+function subDay(){
+  unsubs.forEach(function(u){typeof u==="function"&&u()});unsubs=[];moves={};conts={};notes={};reents={};
+  if(!DB)return;var d=D(),er=function(e){banner("Sync error: "+(e&&e.message||e))};
+  unsubs.push(DB.collection("m"+d).onSnapshot(snapInto(0,function(o){moves=o}),er));
+  unsubs.push(DB.collection("c"+d).onSnapshot(snapInto(0,function(o){conts=o}),er));
+  unsubs.push(DB.collection("n"+d).onSnapshot(snapInto(0,function(o){notes=o}),er));
+  if(isEd)unsubs.push(DB.collection("r"+d).onSnapshot(snapInto(0,function(o){reents=o}),er))}
+var lastDay=0;function resub(){if(D()!==lastDay){lastDay=D();subDay()}draw()}
+
+function ensureLogin(){return new Promise(function(resolve){
+  function ok(code,role){AUTH.code=code;AUTH.role=role;sv("bt_code",code);sv("bt_role_srv",role);shut("mLogin");resolve()}
+  function tryCode(code,user){
+    fetch("/api/me",{headers:{"x-code":code}}).then(function(r){if(r.status===200)return r.json();throw r.status})
+     .then(function(j){ok(code,j.role)})
+     .catch(function(st){
+       if(st===401||st===429){sv("bt_code","");if(user)setErr("lgErr",st===429?"Too many tries. Wait a few minutes.":"That code is not right.");open("mLogin")}
+       else if(code&&ld("bt_role_srv")){AUTH.code=code;AUTH.role=ld("bt_role_srv");resolve()}
+       else{setErr("lgErr","No connection. Try again.");open("mLogin")}})}
+  var c=ld("bt_code");if(c)tryCode(c,false);else open("mLogin");
+  $("lgGo").onclick=function(){var v=$("lgCode").value.trim();if(v)tryCode(v,true)}})}
+if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})});
+draw();pending();
+(async function(){
+  try{
+    await ensureLogin();if(!me().name)open("mWel");
+    var u=await claude.use("user");isEd=u?await u.canEdit():false;if(isEd){tab="board"}
+    DB=await claude.use("db");
+    if(!DB){banner("Not connected. Check your internet and reload.");return}
+    var er=function(e){banner("Sync error: "+(e&&e.message||e))};
+    DB.collection("staff").onSnapshot(snapInto(0,function(o){staff=o}),er);
+    DB.collection("colleges").onSnapshot(snapInto(0,function(o){colleges=o}),er);
+    DB.collection("config").onSnapshot(function(s){s.docs.forEach(function(d){var v=d.data()||{};if(d.id==="venues"&&v.list)venues=v.list;if(d.id==="fest")fest.start=v.start||""});resub()},er);
+    if(isEd)DB.collection("blacklist").onSnapshot(snapInto(0,function(o){black=o}),er);
+    lastDay=D();subDay();draw();if(outbox().length){startOut();flush()}
+  }catch(e){banner("Sync unavailable.")}
+})();
+</script>
+</body>
+</html>
