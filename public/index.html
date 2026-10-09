@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#b4381f">
+<meta name="build" content="2026-10-09-a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Biswamil">
@@ -56,6 +57,7 @@ tr.out td{background:var(--red)}tr.go{cursor:pointer}
 <div class="wrap">
   <div class="top"><div><h1>Biswamil Movement Log</h1><div class="sub">Team Management HQ</div></div><div id="hi"></div></div>
   <div class="banner" id="banner"></div>
+  <div class="banner" id="upd" style="border-color:var(--acc);color:var(--ink)"><b>New version available.</b> <button class="s p" id="updGo">Update now</button></div>
   <div id="days"></div>
   <div class="tabs" id="tabs"></div>
   <div id="view"></div>
@@ -169,8 +171,8 @@ function rowsMap(){
   Object.keys(conts).forEach(function(k){var c=conts[k];L[k]={key:k,name:c.college,sports:c.sports||"",regStaff:c.staff||"",reg:c.regAt||0,v:{},total:0,last:0,staff:{}}});
   Object.keys(moves).map(function(k){return moves[k]}).sort(function(a,b){return a.t-b.t}).forEach(function(m){
     var k=slug(m.college),r=L[k]=L[k]||{key:k,name:m.college,sports:"",regStaff:"",reg:m.t,v:{},total:0,last:0,staff:{}};
-    if(m.from!==OUT)r.v[m.from]=(r.v[m.from]||0)-m.n;else r.total+=m.n;
-    r.v[m.to]=(r.v[m.to]||0)+m.n;r.last=m.t;r.staff[m.by]=1;if(m.partner)r.staff[m.partner]=1});
+    if(m.remark==="Re-entry"&&m.from===OUT){var lf=Math.max(0,r.v[LEFT]||0),back=Math.min(lf,m.n);r.v[LEFT]=(r.v[LEFT]||0)-back;r.total+=m.n-back}else if(m.from!==OUT)r.v[m.from]=(r.v[m.from]||0)-m.n;else r.total+=m.n;
+    r.v[m.to]=(r.v[m.to]||0)+m.n;r.last=m.t;r.staff[m.by]=1;if(m.remark==="Re-entry"){r.reAt=m.t;r.reN=(r.reN||0)+m.n}if(m.partner)r.staff[m.partner]=1});
   Object.keys(L).forEach(function(k){var r=L[k];r.left=Math.max(0,r.v[LEFT]||0);r.on=Math.max(0,r.total-r.left);
     r.where=Object.keys(r.v).filter(function(v){return v!==LEFT&&r.v[v]>0}).sort(function(a,b){return r.v[b]-r.v[a]}).map(function(v){return r.v[v]+" "+v});
     var names={};(r.regStaff||"").split(",").forEach(function(x){x=x.trim();if(x)names[x]=1});Object.keys(r.staff).forEach(function(x){names[x]=1});r.people=Object.keys(names)});
@@ -181,6 +183,13 @@ function tops(){return Object.keys(notes).map(function(k){return notes[k]}).filt
 function repliesOf(id){return Object.keys(notes).map(function(k){return notes[k]}).filter(function(x){return x.parent===id}).sort(function(a,b){return a.t-b.t})}
 function latestRemark(name){var k=slug(name),l=tops().filter(function(x){return slug(x.college)===k}).sort(function(a,b){return b.t-a.t});return l[0]||null}
 function defFrom(c){var r=rowsMap()[slug(c)];if(!r)return OUT;var best=OUT,n=0;Object.keys(r.v).forEach(function(v){if(v!==LEFT&&r.v[v]>n){n=r.v[v];best=v}});return best}
+function rmk(m){return m.remark==="Re-entry"?'<span class="chip">Re-entry</span>':esc(m.remark||"")}
+function reLabel(r){
+  var re=reents[r.key]||{};
+  if(r.reAt)return '<span class="chip">Re-entered '+r.reN+' at '+clock(r.reAt)+'</span>';
+  if(re.status==="yes")return '<span class="chip">Will return'+(re.expected?' ('+esc(re.expected)+')':'')+'</span>'+(re.note?' '+esc(re.note):'');
+  if(re.status==="no")return '<span class="chip">Not returning</span>'+(re.note?' '+esc(re.note):'');
+  return ""}
 function sportsOf(c){var r=rowsMap()[slug(c)];return r&&r.sports?r.sports.split(",").map(function(x){return x.trim()}).filter(Boolean):[]}
 
 /* ---------- drawing (throttled; paused while the screen is off) ---------- */
@@ -188,13 +197,13 @@ var rt=null,dirty=false;
 function schedule(){if(rt)return;rt=setTimeout(function(){rt=null;if(document.hidden){dirty=true;return}draw()},300)}
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&dirty){dirty=false;draw()}});
 function draw(){
-  var tabs=[["log","Log"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
-  if(!isEd&&tab!=="log")tab="log";
+  var tabs=[["log","Log"],["re","Re-entry"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
+  if(!isEd&&tab!=="log"&&tab!=="re")tab="log";
   var snap={},act=document.activeElement&&document.activeElement.id;
   document.querySelectorAll("#view [id],#cdBody [id]").forEach(function(el){if("value" in el)snap[el.id]=el.value});
   var dn=D();
   $("days").innerHTML=isEd?'<div class="seg">'+[1,2,3].map(function(d){return '<button data-day="'+d+'"'+(dn===d?' class="on"':'')+'>Day '+d+(d===todayDay()?' ·today':'')+'</button>'}).join("")+'</div>':'<div class="sub" style="margin-bottom:6px">Day '+dn+'</div>';
-  $("tabs").innerHTML=isEd?tabs.map(function(t){return '<button data-t="'+t[0]+'"'+(tab===t[0]?' class="on"':'')+'>'+t[1]+'</button>'}).join(""):"";
+  $("tabs").innerHTML=true?tabs.map(function(t){return '<button data-t="'+t[0]+'"'+(tab===t[0]?' class="on"':'')+'>'+t[1]+'</button>'}).join(""):"";
   var n=me().name;$("hi").innerHTML=n?'<span class="sub">'+esc(n)+' ('+esc(me().role)+')</span> <button class="s" data-chg="1">Change</button>':"";
   $("view").innerHTML=tab==="log"?vLog():tab==="board"?vBoard():tab==="staff"?vStaff():tab==="re"?vRe():tab==="all"?vAll():vSetup();
   if($("mCol").classList.contains("show")&&curCol)$("cdBody").innerHTML=vCol(curCol);
@@ -216,6 +225,8 @@ function vLog(){
   var m=me(),mine=Object.keys(moves).map(function(k){return moves[k]}).filter(function(x){return x.by===m.name}).sort(function(a,b){return b.t-a.t}).slice(0,5);
   var forMe=tops().filter(function(x){return !x.done&&(x.to===m.name||x.to==="All")}).sort(function(a,b){return b.t-a.t});
   var msgs=forMe.length?'<div class="c"><b>Messages for you ('+forMe.length+')</b>'+forMe.map(function(x){return msgBlock(x,true,true)}).join("")+'</div>':"";
+  var Lm=rowsMap(),exp=Object.keys(reents).map(function(k){return reents[k]}).filter(function(x){return x.status==="yes"&&!((Lm[slug(x.college)]||{}).on>0)});
+  var reCard=exp.length?'<div class="c"><b>Re-entry expected ('+exp.length+')</b><div class="sub">Colleges marked as coming back. When they arrive, use New entry.</div>'+exp.map(function(x){return '<div class="line"><b>'+esc(x.college)+'</b>'+(x.expected?' · '+esc(x.expected)+' people':'')+(x.note?' <span class="sub">· '+esc(x.note)+'</span>':'')+'</div>'}).join("")+'</div>':"";
   var seg='<div class="seg"><button data-mode="move"'+(mode==="move"?' class="on"':'')+'>Movement</button><button data-mode="entry"'+(mode==="entry"?' class="on"':'')+'>New entry</button></div>';
   var form;
   if(mode==="entry")form='<div class="c"><b>New entry at the main desk</b><div class="sub">Enter the total strength as they come in. Use this again for re-entry or late arrivals.</div>'
@@ -236,8 +247,8 @@ function vLog(){
      +'<label>Remark (optional)</label><input id="fRm" list="rl" placeholder="Pick or type">'
      +(withOn?'<label>Also with (name)</label><input id="fWith" list="stl" value="'+esc(withName)+'">':'<div><button class="s" data-with="1" style="margin-top:8px">+ Someone is with me</button></div>')
      +'<div class="err" id="fErr"></div><button class="p" id="send" style="width:100%;margin-top:6px;padding:14px">Send</button></div>'}
-  return msgs+seg+form+'<div class="sub" style="margin:14px 0 6px">Your recent entries</div>'
-   +(mine.length?mine.map(function(x){return '<div class="c row"><div><b>'+esc(x.n)+'</b> · '+esc(x.college)+'<div class="sub">'+esc(x.from)+' → '+esc(x.to)+' · '+clock(x.t)+(x.remark?' · '+esc(x.remark):'')+'</div></div><button class="s" data-del="'+esc(x.id)+'">'+(pendDel===x.id?"Tap again":"Delete")+'</button></div>'}).join(""):'<div class="empty">Nothing logged yet.</div>');
+  return msgs+reCard+seg+form+'<div class="sub" style="margin:14px 0 6px">Your recent entries</div>'
+   +(mine.length?mine.map(function(x){return '<div class="c row"><div><b>'+esc(x.n)+'</b> · '+esc(x.college)+'<div class="sub">'+esc(x.from)+' → '+esc(x.to)+' · '+clock(x.t)+(x.remark?' · '+rmk(x):'')+'</div></div><button class="s" data-del="'+esc(x.id)+'">'+(pendDel===x.id?"Tap again":"Delete")+'</button></div>'}).join(""):'<div class="empty">Nothing logged yet.</div>');
 }
 
 function vBoard(){
@@ -246,10 +257,10 @@ function vBoard(){
   var show=L.filter(function(r){return !q||r.name.toLowerCase().indexOf(q)>-1});
   return '<div class="stats"><div class="stat"><b>'+tot+'</b><span class="sub">Entered today</span></div><div class="stat"><b>'+on+'</b><span class="sub">On campus now</span></div><div class="stat"><b>'+left+'</b><span class="sub">Left</span></div></div>'
    +'<div class="row" style="gap:8px;margin-bottom:10px"><input id="bq" placeholder="Find a college" value="'+esc(bq)+'"><button class="p" id="expB" style="white-space:nowrap">Export</button></div>'
-   +(show.length?'<div class="c scroll"><table><tr><th>S.No</th><th>College</th><th>Where now</th><th>Events</th><th>Total</th><th>On campus</th><th>TM</th><th>Remark</th></tr>'
+   +(show.length?'<div class="c scroll"><table><tr><th>S.No</th><th>College</th><th>Where now</th><th>Events</th><th>Total</th><th>On campus</th><th>TM</th><th>Remark</th><th>Re-entry</th></tr>'
    +show.map(function(r,i){var lr=latestRemark(r.name),open=tops().filter(function(x){return slug(x.college)===r.key&&!x.done}).length;
      var replied=tops().some(function(x){if(slug(x.college)!==r.key||x.done)return false;var rs=repliesOf(x.id);return rs.length&&rs[rs.length-1].by!==x.by});
-     return '<tr class="go'+(r.total>0&&r.on===0?' out':'')+'" data-col="'+esc(r.key)+'"><td>'+(L.indexOf(r)+1)+'</td><td><b>'+(blFor(r.name).length?'<span class="bl">⚠ </span>':'')+esc(r.name)+'</b></td><td>'+(r.on===0&&r.total>0?'<b>OUT</b>':esc(r.where.join(" · ")||"—"))+(r.left&&r.on?' · '+r.left+' left':'')+'</td><td>'+esc(r.sports)+'</td><td>'+r.total+'</td><td>'+r.on+'</td><td>'+esc(r.people.join(", "))+'</td><td>'+(lr?esc(lr.text)+(open?' <span class="chip">'+open+' open</span>':'')+(replied?' <span class="chip">replied</span>':''):'')+'</td></tr>'}).join("")+'</table></div><div class="sub">Tap a row for details, history and messages. Red = whole contingent has left.</div>'
+     return '<tr class="go'+(r.total>0&&r.on===0?' out':'')+'" data-col="'+esc(r.key)+'"><td>'+(L.indexOf(r)+1)+'</td><td><b>'+(blFor(r.name).length?'<span class="bl">⚠ </span>':'')+esc(r.name)+'</b></td><td>'+(r.on===0&&r.total>0?'<b>OUT</b>':esc(r.where.join(" · ")||"—"))+(r.left&&r.on?' · '+r.left+' left':'')+'</td><td>'+esc(r.sports)+'</td><td>'+r.total+'</td><td>'+r.on+'</td><td>'+esc(r.people.join(", "))+'</td><td>'+(lr?esc(lr.text)+(open?' <span class="chip">'+open+' open</span>':'')+(replied?' <span class="chip">replied</span>':''):'')+'</td><td>'+reLabel(r)+'</td></tr>'}).join("")+'</table></div><div class="sub">Tap a row for details, history and messages. Red = whole contingent has left.</div>'
    :'<div class="empty">No colleges entered yet for Day '+D()+'.</div>');
 }
 function vCol(k){
@@ -262,7 +273,7 @@ function vCol(k){
    +'<label>Events</label><input id="cdSp" value="'+esc(r.sports)+'"><label>TM handling</label><input id="cdSt" value="'+esc(r.regStaff)+'"><button class="s" data-cdsave="'+esc(k)+'" style="margin-top:8px">Save</button>'
    +'<div class="c" style="margin-top:12px"><b>Message a TM member</b><label>To</label><select id="cdTo">'+opts(names)+'</select><label>Message</label><input id="cdTx" placeholder="e.g. move to Auditorium before 3 PM"><button class="p s" data-cdpost="'+esc(k)+'" style="margin-top:8px">Post</button><div class="err" id="cdErr"></div></div>'
    +(th.length?th.map(function(x){return msgBlock(x,true,true)}).join(""):'<div class="sub">No messages yet.</div>')
-   +'<div class="sub" style="margin-top:12px">Recent movements</div>'+(hist.length?hist.map(function(m){return '<div class="line"><b>'+esc(m.n)+'</b> '+esc(m.sport||"")+' '+esc(m.from)+' → '+esc(m.to)+' <span class="sub">'+clock(m.t)+' · '+esc(m.by)+(m.remark?' · '+esc(m.remark):'')+'</span></div>'}).join(""):'<div class="sub">None.</div>');
+   +'<div class="sub" style="margin-top:12px">Recent movements</div>'+(hist.length?hist.map(function(m){return '<div class="line"><b>'+esc(m.n)+'</b> '+esc(m.sport||"")+' '+esc(m.from)+' → '+esc(m.to)+' <span class="sub">'+clock(m.t)+' · '+esc(m.by)+(m.remark?' · '+rmk(m):'')+'</span></div>'}).join(""):'<div class="sub">None.</div>');
 }
 function lastHandled(name){
   var mv=Object.keys(moves).map(function(k){return moves[k]}).filter(function(m){return m.by===name}).sort(function(a,b){return b.t-a.t});
@@ -307,7 +318,7 @@ function vAll(){
   var q=eq.toLowerCase(),a=Object.keys(moves).map(function(k){return moves[k]}).sort(function(x,y){return y.t-x.t}).filter(function(m){return !q||[m.college,m.by,m.from,m.to,m.remark,m.sport].join(" ").toLowerCase().indexOf(q)>-1});
   return '<div class="row" style="margin-bottom:10px;gap:8px"><input id="eq" placeholder="Search college, person or venue" value="'+esc(eq)+'"><button class="p" id="expE" style="white-space:nowrap">Export</button></div>'
    +'<div class="sub" style="margin-bottom:6px">Day '+D()+' · '+a.length+' entries</div><div class="c scroll"><table><tr><th>Time</th><th>By</th><th>College</th><th>People</th><th>Events</th><th>From → To</th><th>Remark</th><th></th></tr>'
-   +a.slice(0,300).map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+esc(m.from)+' → '+esc(m.to)+'</td><td>'+esc((m.remark||"")+(m.partner?" (with "+m.partner+")":""))+'</td><td><button class="s" data-del="'+esc(m.id)+'">'+(pendDel===m.id?"Tap again":"Delete")+'</button></td></tr>'}).join("")+'</table></div>'
+   +a.slice(0,300).map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+esc(m.from)+' → '+esc(m.to)+'</td><td>'+rmk(m)+esc(m.partner?" (with "+m.partner+")":"")+'</td><td><button class="s" data-del="'+esc(m.id)+'">'+(pendDel===m.id?"Tap again":"Delete")+'</button></td></tr>'}).join("")+'</table></div>'
    +(a.length>300?'<div class="sub">Showing latest 300. Export has everything.</div>':'');
 }
 function vSetup(){
@@ -451,7 +462,7 @@ function subDay(){
   unsubs.push(DB.collection("m"+d).onSnapshot(snapInto(0,function(o){moves=o}),er));
   unsubs.push(DB.collection("c"+d).onSnapshot(snapInto(0,function(o){conts=o}),er));
   unsubs.push(DB.collection("n"+d).onSnapshot(snapInto(0,function(o){notes=o}),er));
-  if(isEd)unsubs.push(DB.collection("r"+d).onSnapshot(snapInto(0,function(o){reents=o}),er))}
+  unsubs.push(DB.collection("r"+d).onSnapshot(snapInto(0,function(o){reents=o}),er))}
 var lastDay=0;function resub(){if(D()!==lastDay){lastDay=D();subDay()}draw()}
 
 function ensureLogin(){return new Promise(function(resolve){
@@ -466,6 +477,19 @@ function ensureLogin(){return new Promise(function(resolve){
   var c=ld("bt_code");if(c)tryCode(c,false);else open("mLogin");
   $("lgGo").onclick=function(){var v=$("lgCode").value.trim();if(v)tryCode(v,true)}})}
 if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})});
+/* ---- new versions reach phones without anyone clearing anything ---- */
+function myBuild(){var m=document.querySelector('meta[name="build"]');return m?m.content:""}
+function safeToReload(){var f=$("fCol"),n=$("fN"),e=$("eCol");return !document.querySelector(".modal.show")&&!outbox().length&&(!f||!f.value)&&(!n||!n.value)&&(!e||!e.value)&&!xs.length}
+function applyUpdate(){var go=function(){location.reload()};
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(function(r){return r&&r.update()}).then(go,go);else go()}
+function checkUpdate(){
+  if(document.hidden||!navigator.onLine)return;
+  fetch("/index.html",{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).then(function(t){
+    var m=t.match(/name="build" content="([^"]+)"/);
+    if(m&&m[1]!==myBuild()){if(safeToReload()&&document.body.getAttribute("data-was-hidden"))applyUpdate();else $("upd").style.display="block"}}).catch(function(){})}
+$("updGo").onclick=applyUpdate;
+document.addEventListener("visibilitychange",function(){if(document.hidden)document.body.setAttribute("data-was-hidden","1");else checkUpdate()});
+setInterval(checkUpdate,15*60*1000);setTimeout(checkUpdate,20000);
 draw();pending();
 (async function(){
   try{
