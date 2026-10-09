@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#b4381f">
-<meta name="build" content="2026-10-09-a">
+<meta name="build" content="2026-10-09-b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Biswamil">
@@ -197,8 +197,8 @@ var rt=null,dirty=false;
 function schedule(){if(rt)return;rt=setTimeout(function(){rt=null;if(document.hidden){dirty=true;return}draw()},300)}
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&dirty){dirty=false;draw()}});
 function draw(){
-  var tabs=[["log","Log"],["re","Re-entry"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
-  if(!isEd&&tab!=="log"&&tab!=="re")tab="log";
+  var tabs=[["log","Log"],["re","Re-entry"],["all","Entries"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
+  if(!isEd&&tab!=="log"&&tab!=="re"&&tab!=="all")tab="log";
   var snap={},act=document.activeElement&&document.activeElement.id;
   document.querySelectorAll("#view [id],#cdBody [id]").forEach(function(el){if("value" in el)snap[el.id]=el.value});
   var dn=D();
@@ -316,10 +316,10 @@ function vRe(){
 }
 function vAll(){
   var q=eq.toLowerCase(),a=Object.keys(moves).map(function(k){return moves[k]}).sort(function(x,y){return y.t-x.t}).filter(function(m){return !q||[m.college,m.by,m.from,m.to,m.remark,m.sport].join(" ").toLowerCase().indexOf(q)>-1});
-  return '<div class="row" style="margin-bottom:10px;gap:8px"><input id="eq" placeholder="Search college, person or venue" value="'+esc(eq)+'"><button class="p" id="expE" style="white-space:nowrap">Export</button></div>'
-   +'<div class="sub" style="margin-bottom:6px">Day '+D()+' · '+a.length+' entries</div><div class="c scroll"><table><tr><th>Time</th><th>By</th><th>College</th><th>People</th><th>Events</th><th>From → To</th><th>Remark</th><th></th></tr>'
-   +a.slice(0,300).map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+esc(m.from)+' → '+esc(m.to)+'</td><td>'+rmk(m)+esc(m.partner?" (with "+m.partner+")":"")+'</td><td><button class="s" data-del="'+esc(m.id)+'">'+(pendDel===m.id?"Tap again":"Delete")+'</button></td></tr>'}).join("")+'</table></div>'
-   +(a.length>300?'<div class="sub">Showing latest 300. Export has everything.</div>':'');
+  return '<div class="row" style="margin-bottom:10px;gap:8px"><input id="eq" placeholder="Search college, person or venue" value="'+esc(eq)+'">'+(isEd?'<button class="p" id="expE" style="white-space:nowrap">Export</button>':'')+'</div>'
+   +'<div class="sub" style="margin-bottom:6px">Day '+D()+' · '+a.length+' entries</div><div class="c scroll"><table><tr><th>Time</th><th>By</th><th>College</th><th>People</th><th>Events</th><th>From → To</th><th>Remark</th>'+(isEd?'<th></th>':'')+'</tr>'
+   +a.slice(0,300).map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+esc(m.from)+' → '+esc(m.to)+'</td><td>'+rmk(m)+esc(m.partner?" (with "+m.partner+")":"")+'</td>'+(isEd?'<td><button class="s" data-del="'+esc(m.id)+'">'+(pendDel===m.id?"Tap again":"Delete")+'</button></td>':'')+'</tr>'}).join("")+'</table></div>'
+   +(a.length>300?'<div class="sub">Showing the latest 300.</div>':'');
 }
 function vSetup(){
   var bl=Object.keys(black).map(function(k){return black[k]}).sort(function(a,b){return b.t-a.t});
