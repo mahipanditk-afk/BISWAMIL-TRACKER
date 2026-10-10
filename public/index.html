@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#b4381f">
-<meta name="build" content="2026-10-09-b">
+<meta name="build" content="2026-10-10-a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Biswamil">
@@ -68,7 +68,7 @@ tr.out td{background:var(--red)}tr.go{cursor:pointer}
 
 <div class="modal" id="mLogin"><div class="sheet">
   <h2>Enter access code</h2><div class="sub">Ask Team Management HQ for the code.</div>
-  <label>Access code</label><input id="lgCode" type="password" autocomplete="off" autocapitalize="off">
+  <label>Access code</label><input id="lgCode" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="err" id="lgErr"></div><button class="p" id="lgGo" style="width:100%;margin-top:6px">Continue</button>
 </div></div>
 <div class="modal" id="mWel"><div class="sheet">
@@ -127,9 +127,25 @@ var AUTH={code:"",role:""};
 var ENTRY="Main Desk",OUT="Outside campus",LEFT="Left campus";
 var DEFAULT_VENUES=["Main Desk","Gate 1","Registration Desk","Auditorium","Main Stage","Food Court","Open Air Theatre","Rest Area"];
 var ROLES=["Chair","SATC","Chief","Head","OC","Vol"];
+var COLLEGES=["Rayat College of Law","DME","National Institute of Design, Haryana","Lady Shri Ram College for Women","MBS College","Amity University, Jaipur","Galgotias University","Thapar Institute of Engineering and Technology","MDI Gurgaon","Rishihood University","Dr. B.R. Ambedkar National Law University (NLU Sonipat)","Christ NCR","Maharishi Dayanand University, Rohtak","Amity University, Haryana","SRM University, Sonipat","Symbiosis Center for Management Studies Noida","Delhi Technological University","PGDAV","Indian School of Hospitality","Pearl Delhi - South","DCRUST","NIIT University Neemrana","BML Munjal","Maharaja Surajmal Institute","Sri Venkateshwara College","K.R. Mangalam University","Ashoka University","NIT Delhi","Pearl School of Business","Shiv Nadar University","IILM Greater Noida","IIT Delhi","Amity University, Noida","Lloyd Law College","Netaji Subhash University of Technology","Sports University of Haryana (SUOH)","IILM University, Gurugram","Maharaja Agrasen Institute of Management","World University of Design","Bennett University"];
+var ALIAS={mbs:"MBS College",ish:"Indian School of Hospitality",suoh:"Sports University of Haryana (SUOH)",lsr:"Lady Shri Ram College for Women",dtu:"Delhi Technological University",nsut:"Netaji Subhash University of Technology",nid:"National Institute of Design, Haryana",nlu:"Dr. B.R. Ambedkar National Law University (NLU Sonipat)",galgotias:"Galgotias University",iilmgurgaon:"IILM University, Gurugram",bennett:"Bennett University",ashoka:"Ashoka University"};
+var collegeList=null,wq="";
+function nk(s){return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g,"")}
+function clist(){var l=(collegeList||COLLEGES).slice();return l.filter(function(x,i){return x&&l.indexOf(x)===i}).sort(function(a,b){return a.localeCompare(b)})}
+function mkCanon(){var m={};clist().forEach(function(x){m[nk(x)]=x});return function(n){var k=nk(n);return m[k]||ALIAS[k]||String(n==null?"":n).trim()}}
+function canonDocs(o){var cn=mkCanon(),r={};Object.keys(o).forEach(function(k){var v=o[k];r[k]=(v&&v.college)?Object.assign({},v,{college:cn(v.college)}):v});return r}
+function rekeyCollege(o){var cn=mkCanon(),r={};Object.keys(o).forEach(function(k){var v=o[k];if(v&&v.college){v=Object.assign({},v,{college:cn(v.college)});r[slug(v.college)]=v}else r[k]=v});return r}
+function rekeyName(o){var cn=mkCanon(),r={};Object.keys(o).forEach(function(k){var v=o[k];if(v&&v.name){v=Object.assign({},v,{name:cn(v.name)});r[slug(v.name)]=v}else r[k]=v});return r}
+function colOpts(sel,todayFirst){
+  var all=clist(),o=function(x){return '<option'+(x===sel?' selected':'')+'>'+esc(x)+'</option>'},h='<option value="">Choose college…</option>';
+  if(todayFirst){var tod={};rowsList().forEach(function(r){tod[r.name]=1});var t=Object.keys(tod).sort();
+    if(t.length)h+='<optgroup label="Entered today">'+t.map(o).join("")+'</optgroup>';
+    h+='<optgroup label="All colleges">'+all.filter(function(x){return !tod[x]}).map(o).join("")+'</optgroup>'}
+  else h+=all.map(o).join("");
+  return h}
 var DB=null,isEd=false,venues=DEFAULT_VENUES.slice(),fest={start:""},viewDay=0,tab="log",mode="move";
 var moves={},conts={},notes={},reents={},colleges={},staff={},black={},unsubs=[];
-var evSel=[],xs=[],withOn=false,withName="",pendDel=null,pendWarn=null,curCol="",sq="",bq="",eq="",rq="",rf="all";
+var pipe={from:"",to:""},evSel=[],xs=[],withOn=false,withName="",pendDel=null,pendWarn=null,curCol="",sq="",bq="",eq="",rq="",rf="all";
 var $=function(i){return document.getElementById(i)};
 function esc(s){var d=document.createElement("div");d.textContent=s==null?"":String(s);return d.innerHTML}
 function clock(t){var d=new Date(t),n=new Date(),tm=d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});return d.toDateString()===n.toDateString()?tm:d.toLocaleDateString([],{day:"numeric",month:"short"})+", "+tm}
@@ -197,15 +213,15 @@ var rt=null,dirty=false;
 function schedule(){if(rt)return;rt=setTimeout(function(){rt=null;if(document.hidden){dirty=true;return}draw()},300)}
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&dirty){dirty=false;draw()}});
 function draw(){
-  var tabs=[["log","Log"],["re","Re-entry"],["all","Entries"]];if(isEd)tabs=[["board","HQ"],["staff","TM"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
-  if(!isEd&&tab!=="log"&&tab!=="re"&&tab!=="all")tab="log";
+  var tabs=[["log","Log"],["where","Where"],["desk","Desk → Reg"],["re","Re-entry"],["all","Entries"]];if(isEd)tabs=[["board","HQ"],["where","Where"],["staff","TM"],["desk","Desk → Reg"],["re","Re-entry"],["log","Log"],["all","Entries"],["setup","Setup"]];
+  if(!isEd&&tab!=="log"&&tab!=="re"&&tab!=="all"&&tab!=="desk"&&tab!=="where")tab="log";
   var snap={},act=document.activeElement&&document.activeElement.id;
   document.querySelectorAll("#view [id],#cdBody [id]").forEach(function(el){if("value" in el)snap[el.id]=el.value});
   var dn=D();
   $("days").innerHTML=isEd?'<div class="seg">'+[1,2,3].map(function(d){return '<button data-day="'+d+'"'+(dn===d?' class="on"':'')+'>Day '+d+(d===todayDay()?' ·today':'')+'</button>'}).join("")+'</div>':'<div class="sub" style="margin-bottom:6px">Day '+dn+'</div>';
   $("tabs").innerHTML=true?tabs.map(function(t){return '<button data-t="'+t[0]+'"'+(tab===t[0]?' class="on"':'')+'>'+t[1]+'</button>'}).join(""):"";
   var n=me().name;$("hi").innerHTML=n?'<span class="sub">'+esc(n)+' ('+esc(me().role)+')</span> <button class="s" data-chg="1">Change</button>':"";
-  $("view").innerHTML=tab==="log"?vLog():tab==="board"?vBoard():tab==="staff"?vStaff():tab==="re"?vRe():tab==="all"?vAll():vSetup();
+  $("view").innerHTML=tab==="log"?vLog():tab==="board"?vBoard():tab==="staff"?vStaff():tab==="where"?vWhere():tab==="desk"?vDesk():tab==="re"?vRe():tab==="all"?vAll():vSetup();
   if($("mCol").classList.contains("show")&&curCol)$("cdBody").innerHTML=vCol(curCol);
   Object.keys(snap).forEach(function(id){var el=$(id);if(el&&snap[id]!==""&&"value" in el)el.value=snap[id]});
   if(act&&$(act)&&($(act).tagName==="INPUT"||$(act).tagName==="TEXTAREA")){var e=$(act);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}
@@ -230,16 +246,16 @@ function vLog(){
   var seg='<div class="seg"><button data-mode="move"'+(mode==="move"?' class="on"':'')+'>Movement</button><button data-mode="entry"'+(mode==="entry"?' class="on"':'')+'>New entry</button></div>';
   var form;
   if(mode==="entry")form='<div class="c"><b>New entry at the main desk</b><div class="sub">Enter the total strength as they come in. Use this again for re-entry or late arrivals.</div>'
-   +'<label>College / team</label><input id="eCol" list="al" placeholder="College name">'
+   +'<label>College / team</label><select id="eCol">'+colOpts("",false)+'</select>'
    +'<label>Total people entering now</label><input id="eN" type="number" min="1" inputmode="numeric">'
    +'<label>Events (comma separated)</label><input id="eSp" placeholder="e.g. Dance, Nukkad, Band">'
    +'<label>TM handling (names, comma separated)</label><input id="eSt" placeholder="e.g. Viju, Husena">'
    +'<div class="err" id="eErr"></div><button class="p" id="eGo" style="width:100%;margin-top:6px;padding:14px">Register entry</button></div>';
   else{
-    var xr=xs.map(function(r,i){return '<div class="two" style="margin-top:8px"><input data-xi="'+i+'" data-xf="c" list="cl" placeholder="Another college" value="'+esc(r.c)+'"><input data-xi="'+i+'" data-xf="n" type="number" min="1" inputmode="numeric" placeholder="People" value="'+esc(r.n)+'"></div>'}).join("");
+    var xr=xs.map(function(r,i){return '<div class="two" style="margin-top:8px"><select data-xi="'+i+'" data-xf="c">'+colOpts(r.c,true)+'</select><input data-xi="'+i+'" data-xf="n" type="number" min="1" inputmode="numeric" placeholder="People" value="'+esc(r.n)+'"></div>'}).join("");
     var cv=$("fCol")?$("fCol").value:"",sp=sportsOf(cv);
     form='<div class="c"><b>Log a movement</b>'
-     +'<label>College</label><input id="fCol" list="cl" placeholder="College name">'
+     +'<label>College</label><select id="fCol">'+colOpts("",true)+'</select>'
      +'<label>How many people</label><input id="fN" type="number" min="1" inputmode="numeric">'+xr
      +'<div><button class="s" data-addc="1" style="margin-top:8px">+ Add another college (same from and to)</button></div>'
      +'<div class="two"><div><label>From</label><select id="fFrom">'+opts(fromList())+'</select></div><div><label>To</label><select id="fTo">'+opts(toList())+'</select></div></div>'
@@ -297,22 +313,58 @@ function vStaff(){
         +'<span style="display:flex;gap:6px"><button class="s" data-sbrk="'+esc(id)+'">'+(x.status==="break"?"Back":"Break")+'</button><button class="s" data-sdel="'+esc(id)+'">'+(pendDel==="s:"+id?"Tap again":"Remove")+'</button></span></div></div>'}).join("")+'</div>'}).join("")+'</div>'
     :'<div class="empty">No TM members yet. Tap + Add TM to place everyone in one go.</div>');
 }
+function setRe(key,status){
+  var L=rowsMap(),r=L[key],name=r?r.name:((colleges[key]||{}).name||key),cur=(reents[key]||{}).status,ns=cur===status?"":status;
+  var o={college:name,status:ns,by:me().name||"HQ",t:Date.now()};reents[key]=o;put("r"+D(),key,o);draw();
+  toast(ns==="yes"?"Marked: will come back":ns==="no"?"Marked: not coming back":"Cleared")}
+function reRow(k,name,info){
+  var st=(reents[k]||{}).status||"";
+  return '<div class="c"><b>'+esc(name)+'</b>'+(info?'<div class="sub">'+info+'</div>':'')
+   +'<div class="two" style="margin-top:8px"><button data-rs="yes" data-rk="'+esc(k)+'"'+(st==="yes"?' class="on"':'')+'>Will come back</button><button data-rs="no" data-rk="'+esc(k)+'"'+(st==="no"?' class="on"':'')+'>Not coming back</button></div></div>'}
 function vRe(){
-  var L=rowsMap(),q=rq.toLowerCase(),list=Object.keys(colleges).map(function(k){return {key:k,name:colleges[k].name}});
-  Object.keys(L).forEach(function(k){if(!colleges[k])list.push({key:k,name:L[k].name})});
-  var rows=list.map(function(c){var r=L[c.key],re=reents[c.key]||{};var st=r&&r.on>0?"on":(r&&r.total>0?"left":"not");
-    return {c:c,r:r,re:re,st:st}}).filter(function(x){return (!q||x.c.name.toLowerCase().indexOf(q)>-1)&&(rf==="all"||(rf==="yes"&&x.re.status==="yes")||(rf==="no"&&x.re.status==="no")||(rf==="left"&&x.st==="left")||(rf==="none"&&x.st!=="on"))})
-    .sort(function(a,b){return a.c.name.localeCompare(b.c.name)});
-  var chips=[["all","All"],["left","Left today"],["none","Not on campus"],["yes","Will return"],["no","Not returning"]];
-  return '<div class="sub" style="margin-bottom:8px">Day '+D()+' re-entry. Mark whether colleges that are out will come back. When they enter at the desk they show as on campus.</div>'
-   +'<input id="rq" placeholder="Find a college" value="'+esc(rq)+'" style="margin-bottom:8px"><div class="seg">'+chips.map(function(c){return '<button data-rf="'+c[0]+'"'+(rf===c[0]?' class="on"':'')+'>'+c[1]+'</button>'}).join("")+'</div>'
-   +(rows.length?rows.map(function(x){var re=x.re,id=esc(x.c.key);
-     return '<div class="c"><div class="row"><b>'+esc(x.c.name)+'</b><span class="chip">'+(x.st==="on"?"On campus ("+x.r.on+")":x.st==="left"?"Left today":"Not entered today")+'</span></div>'
-     +(x.r&&x.r.left?'<div class="sub">'+x.r.left+' of '+x.r.total+' left'+(x.r.last?' · last move '+clock(x.r.last):'')+'</div>':'')
-     +'<div class="two" style="margin-top:8px"><select data-re="'+id+'" data-f="status"><option value=""'+(!re.status?" selected":"")+'>Unknown</option><option value="yes"'+(re.status==="yes"?" selected":"")+'>Will return</option><option value="no"'+(re.status==="no"?" selected":"")+'>Not returning</option></select>'
-     +'<input data-re="'+id+'" data-f="expected" type="number" min="0" inputmode="numeric" placeholder="Expected people" value="'+esc(re.expected||"")+'"></div>'
-     +'<input data-re="'+id+'" data-f="note" placeholder="Note (optional)" value="'+esc(re.note||"")+'" style="margin-top:8px">'
-     +(re.by?'<div class="sub" style="margin-top:4px">Set by '+esc(re.by)+' at '+clock(re.t)+'</div>':'')+'</div>'}).join(""):'<div class="empty">No colleges here.</div>');
+  var L=rowsMap(),und=function(k){return (reents[k]||{}).status?1:0};
+  var left=Object.keys(L).map(function(k){return L[k]}).filter(function(r){return r.total>0&&r.on===0}).sort(function(a,b){return und(a.key)-und(b.key)||b.last-a.last});
+  var other=Object.keys(colleges).filter(function(k){return !L[k]}).map(function(k){return {k:k,name:colleges[k].name,day:colleges[k].lastDay}}).sort(function(a,b){return und(a.k)-und(b.k)||a.name.localeCompare(b.name)});
+  return '<div class="c"><b>Will they come back?</b><div class="sub" style="margin-top:4px">Below are colleges that are not on campus right now. Tap <b>Will come back</b> or <b>Not coming back</b>. Tap again to undo. When a college does come back, enter it again with <b>New entry</b> at the desk. The app marks it as a re-entry by itself.</div></div>'
+   +'<div class="sub" style="margin:10px 0 6px">Left campus today ('+left.length+')</div>'
+   +(left.length?left.map(function(r){return reRow(r.key,r.name,'Left at '+clock(r.last)+' · '+r.total+' people')}).join(""):'<div class="empty">No college has left yet today.</div>')
+   +(other.length?'<div class="sub" style="margin:14px 0 6px">Came on another day, not here yet today ('+other.length+')</div>'+other.map(function(x){return reRow(x.k,x.name,x.day?'Last came on Day '+x.day:'')}).join(""):'');
+}
+function vWhere(){
+  var L=rowsList(),q=wq.toLowerCase(),byV={},tm={},on=0,nc=0,np=0;
+  L.forEach(function(r){var any=false;Object.keys(r.v).forEach(function(v){var n=r.v[v];if(v===LEFT||n<=0)return;(byV[v]=byV[v]||[]).push({n:n,name:r.name});on+=n;any=true});if(any)nc++});
+  Object.keys(staff).forEach(function(k){var x=staff[k];if(x.loc){(tm[x.loc]=tm[x.loc]||[]).push(x);np++}});
+  var base=allV(),extra=Object.keys(byV).concat(Object.keys(tm)).filter(function(v,i,a){return base.indexOf(v)<0&&a.indexOf(v)===i});
+  var cards=base.concat(extra).map(function(v){
+    var vm=v.toLowerCase().indexOf(q)>-1;
+    var cs=(byV[v]||[]).filter(function(c){return !q||vm||c.name.toLowerCase().indexOf(q)>-1}).sort(function(a,b){return b.n-a.n});
+    var ts=(tm[v]||[]).filter(function(x){return !q||vm||x.name.toLowerCase().indexOf(q)>-1}).sort(function(a,b){return ROLES.indexOf(a.role)-ROLES.indexOf(b.role)||a.name.localeCompare(b.name)});
+    if(!cs.length&&!ts.length)return "";
+    var tot=(byV[v]||[]).reduce(function(a,c){return a+c.n},0);
+    return '<div class="c"><div class="row"><span class="loc">'+esc(v)+'</span><span class="sub">'+tot+' people</span></div>'
+     +(cs.length?cs.map(function(c){return '<div class="line"><b>'+c.n+'</b> · '+esc(c.name)+'</div>'}).join(""):'<div class="sub" style="margin-top:6px">No college here right now.</div>')
+     +(ts.length?'<div class="sub" style="margin-top:8px">TM here: '+ts.map(function(x){return esc(x.name)+' ('+esc(x.role)+')'}).join(", ")+'</div>':'')+'</div>'}).join("");
+  var left=L.filter(function(r){return r.left>0&&(!q||r.name.toLowerCase().indexOf(q)>-1)});
+  return '<div class="stats"><div class="stat"><b>'+on+'</b><span class="sub">People on campus</span></div><div class="stat"><b>'+nc+'</b><span class="sub">Colleges in</span></div><div class="stat"><b>'+np+'</b><span class="sub">TM placed</span></div></div>'
+   +'<input id="wq" placeholder="Find a college, TM or venue" value="'+esc(wq)+'" style="margin-bottom:10px">'
+   +(cards?'<div class="grid">'+cards+'</div>':'<div class="empty">Nobody on campus yet.</div>')
+   +(left.length?'<div class="c" style="margin-top:10px"><b>Left campus</b>'+left.map(function(r){return '<div class="line"><b>'+r.left+'</b> · '+esc(r.name)+'</div>'}).join("")+'</div>':'');
+}
+function pf(){return pipe.from||ENTRY}
+function pt(){return pipe.to||allV().filter(function(v){return /reg/i.test(v)})[0]||"Registration Desk"}
+function vDesk(){
+  var F=pf(),T=pt(),L=rowsList();
+  var sent=Object.keys(moves).map(function(k){return moves[k]}).filter(function(m){return m.from===F&&m.to===T}).sort(function(a,b){return b.t-a.t});
+  var sentN=sent.reduce(function(a,m){return a+m.n},0);
+  var wait=L.filter(function(r){return (r.v[F]||0)>0}).sort(function(a,b){return a.last-b.last});
+  var waitN=wait.reduce(function(a,r){return a+r.v[F]},0);
+  var atT=L.filter(function(r){return (r.v[T]||0)>0}),atN=atT.reduce(function(a,r){return a+r.v[T]},0);
+  return '<div class="sub" style="margin-bottom:8px">Everyone moving from <b>'+esc(F)+'</b> to <b>'+esc(T)+'</b> today. Read only.</div>'
+   +'<div class="stats"><div class="stat"><b>'+waitN+'</b><span class="sub">Waiting at '+esc(F)+'</span></div><div class="stat"><b>'+sentN+'</b><span class="sub">Sent to '+esc(T)+'</span></div><div class="stat"><b>'+atN+'</b><span class="sub">At '+esc(T)+' now</span></div></div>'
+   +'<div class="c"><b>Waiting at '+esc(F)+'</b>'+(wait.length?wait.map(function(r){return '<div class="line"><b>'+esc(r.v[F])+'</b> · '+esc(r.name)+' <span class="sub">· last update '+clock(r.last)+'</span></div>'}).join(""):'<div class="sub" style="margin-top:6px">Nobody is waiting.</div>')+'</div>'
+   +'<div class="c"><b>At '+esc(T)+' now</b>'+(atT.length?atT.map(function(r){return '<div class="line"><b>'+esc(r.v[T])+'</b> · '+esc(r.name)+'</div>'}).join(""):'<div class="sub" style="margin-top:6px">Nobody there yet.</div>')+'</div>'
+   +'<div class="sub" style="margin:10px 0 6px">'+esc(F)+' → '+esc(T)+' updates ('+sent.length+')</div>'
+   +(sent.length?'<div class="c scroll"><table><tr><th>Time</th><th>By</th><th>College</th><th>People</th><th>Events</th><th>Remark</th></tr>'+sent.map(function(m){return '<tr><td>'+clock(m.t)+'</td><td>'+esc(m.by)+' ('+esc(m.role)+')</td><td>'+esc(m.college)+'</td><td>'+esc(m.n)+'</td><td>'+esc(m.sport||"")+'</td><td>'+rmk(m)+esc(m.partner?" (with "+m.partner+")":"")+'</td></tr>'}).join("")+'</table></div>':'<div class="empty">No movements from '+esc(F)+' to '+esc(T)+' yet today.</div>');
 }
 function vAll(){
   var q=eq.toLowerCase(),a=Object.keys(moves).map(function(k){return moves[k]}).sort(function(x,y){return y.t-x.t}).filter(function(m){return !q||[m.college,m.by,m.from,m.to,m.remark,m.sport].join(" ").toLowerCase().indexOf(q)>-1});
@@ -323,11 +375,13 @@ function vAll(){
 }
 function vSetup(){
   var bl=Object.keys(black).map(function(k){return black[k]}).sort(function(a,b){return b.t-a.t});
-  return '<div class="c"><b>Fest start date (Day 1)</b><div class="sub">Everyone logs into the right day automatically. Currently: Day '+todayDay()+'.</div><div class="two" style="margin-top:8px"><input id="fs" type="date" value="'+esc(fest.start)+'"><button class="p" data-fs="1">Save</button></div></div>'
+  return '<div class="c"><b>Desk → Reg segment</b><div class="sub">The movement everyone can follow in its own tab. Pick the two venues.</div><div class="two" style="margin-top:8px"><select id="plF">'+opts(allV(),pf())+'</select><select id="plT">'+opts(allV(),pt())+'</select></div><button class="p s" data-pl="1" style="margin-top:8px">Save</button></div>'
+   +'<div class="c"><b>Colleges list</b><div class="sub">This is the dropdown everyone picks from. Add a missing college here.</div><div class="two" style="margin-top:8px"><input id="clN" placeholder="New college name"><button class="p" data-cl="add">Add</button></div><div class="err" id="clErr"></div>'+clist().map(function(c){return '<div class="line row"><span>'+esc(c)+'</span><button class="s" data-cl="del" data-n="'+esc(c)+'">Remove</button></div>'}).join("")+'</div>'
+   +'<div class="c"><b>Fest start date (Day 1)</b><div class="sub">Everyone logs into the right day automatically. Currently: Day '+todayDay()+'.</div><div class="two" style="margin-top:8px"><input id="fs" type="date" value="'+esc(fest.start)+'"><button class="p" data-fs="1">Save</button></div></div>'
    +'<div class="c"><b>Venues</b><div class="sub">Changes show for everyone straight away. "Outside campus" and "Left campus" are always there.</div><div class="two" style="margin-top:8px"><input id="vN" placeholder="New venue name"><button class="p" data-v="add">Add venue</button></div><div class="err" id="vErr"></div>'
    +allV().map(function(v,i){return '<div class="line row"><span>'+esc(v)+'</span>'+(v===ENTRY?'<span class="sub">entry point</span>':'<button class="s" data-v="del" data-i="'+venues.indexOf(v)+'">Remove</button>')+'</div>'}).join("")+'</div>'
    +'<div class="c"><b>Clear test data</b><div class="sub">Deletes everything logged for Day '+D()+' (entries, colleges, messages, re-entry marks) and the colleges list. Use it after a trial run, before the fest starts. This cannot be undone.</div><button class="s" data-wipe="1" style="margin-top:8px">'+(pendDel==="wipe"?"Tap again to delete everything for Day "+D():"Clear Day "+D())+'</button></div>'
-   +'<div class="c"><b>Blacklist</b><label>College</label><input id="bC" list="al"><label>Person\'s name</label><input id="bP"><label>Reason (optional)</label><input id="bW"><div class="err" id="bErr"></div><button class="p" data-bl="add" style="width:100%;margin-top:6px">Add</button></div>'
+   +'<div class="c"><b>Blacklist</b><label>College</label><select id="bC">'+colOpts("",false)+'</select><label>Person\'s name</label><input id="bP"><label>Reason (optional)</label><input id="bW"><div class="err" id="bErr"></div><button class="p" data-bl="add" style="width:100%;margin-top:6px">Add</button></div>'
    +bl.map(function(b){return '<div class="c row"><div><b>'+esc(b.person)+'</b> · '+esc(b.college)+'<div class="sub">'+esc(b.reason||"No reason noted")+' · '+esc(b.by)+' · '+clock(b.t)+'</div></div><button class="s" data-bd="'+esc(b.id)+'">Remove</button></div>'}).join("");
 }
 
@@ -426,6 +480,12 @@ document.addEventListener("click",function(e){
   if(t.getAttribute("data-wipe")){if(pendDel!=="wipe"){pendDel="wipe";draw();return}pendDel=null;var d9=D();
     Object.keys(moves).forEach(function(i){del("m"+d9,i)});Object.keys(conts).forEach(function(i){del("c"+d9,i)});Object.keys(notes).forEach(function(i){del("n"+d9,i)});Object.keys(reents).forEach(function(i){del("r"+d9,i)});Object.keys(colleges).forEach(function(i){del("colleges",i)});
     moves={};conts={};notes={};reents={};colleges={};draw();toast("Cleared");return}
+  if(t.getAttribute("data-rs")){setRe(t.getAttribute("data-rk"),t.getAttribute("data-rs"));return}
+  if((a=t.getAttribute("data-cl"))){
+    var nm=a==="add"?$("clN").value.trim():t.getAttribute("data-n"),cl=clist();
+    if(a==="add"){if(!nm)return;if(cl.indexOf(nm)>-1){setErr("clErr","Already in the list.");return}cl.push(nm)}else cl=cl.filter(function(x){return x!==nm});
+    collegeList=cl;draw();put("config","collegelist",{list:cl,updatedAt:Date.now()});return}
+  if(t.getAttribute("data-pl")){pipe={from:$("plF").value,to:$("plT").value};put("config","pipeline",pipe);draw();toast("Saved");return}
   if(t.getAttribute("data-fs")){fest.start=$("fs").value;put("config","fest",{start:fest.start});resub();toast("Saved");return}
   if(t.getAttribute("data-bl")==="add"){
     var c=$("bC").value.trim(),p=$("bP").value.trim();if(!c||!p){setErr("bErr","Enter the college and the person's name.");return}if(!need())return;
@@ -439,11 +499,12 @@ document.addEventListener("click",function(e){
 });
 document.addEventListener("input",function(e){
   var id=e.target.id;
-  if(id==="bq"){bq=e.target.value;draw()}else if(id==="eq"){eq=e.target.value;draw()}else if(id==="sq"){sq=e.target.value;draw()}else if(id==="rq"){rq=e.target.value;draw()}
+  if(id==="bq"){bq=e.target.value;draw()}else if(id==="eq"){eq=e.target.value;draw()}else if(id==="sq"){sq=e.target.value;draw()}else if(id==="rq"){rq=e.target.value;draw()}else if(id==="wq"){wq=e.target.value;draw()}
   else if(id==="fWith")withName=e.target.value;
   var xi=e.target.getAttribute&&e.target.getAttribute("data-xi");if(xi!=null&&xs[+xi])xs[+xi][e.target.getAttribute("data-xf")]=e.target.value});
 document.addEventListener("change",function(e){
   var el=e.target,a;
+  var xi0=el.getAttribute&&el.getAttribute("data-xi");if(xi0!=null&&xs[+xi0]){xs[+xi0][el.getAttribute("data-xf")]=el.value;return}
   if(el.getAttribute&&el.getAttribute("data-ev")!=null){var v=el.getAttribute("data-ev"),i=evSel.indexOf(v);if(el.checked&&i<0)evSel.push(v);else if(!el.checked&&i>-1)evSel.splice(i,1);return}
   if(el.id==="fCol"){evSel=[];setDefaults();return}
   if(el.id==="eCol"){var k=slug(el.value),c=conts[k];if(c){if(!$("eSp").value)$("eSp").value=c.sports||"";if(!$("eSt").value)$("eSt").value=c.staff||""}return}
@@ -459,23 +520,24 @@ function snapInto(target,fn){return function(s){var o={};s.docs.forEach(function
 function subDay(){
   unsubs.forEach(function(u){typeof u==="function"&&u()});unsubs=[];moves={};conts={};notes={};reents={};
   if(!DB)return;var d=D(),er=function(e){banner("Sync error: "+(e&&e.message||e))};
-  unsubs.push(DB.collection("m"+d).onSnapshot(snapInto(0,function(o){moves=o}),er));
-  unsubs.push(DB.collection("c"+d).onSnapshot(snapInto(0,function(o){conts=o}),er));
-  unsubs.push(DB.collection("n"+d).onSnapshot(snapInto(0,function(o){notes=o}),er));
-  unsubs.push(DB.collection("r"+d).onSnapshot(snapInto(0,function(o){reents=o}),er))}
+  unsubs.push(DB.collection("m"+d).onSnapshot(snapInto(0,function(o){moves=canonDocs(o)}),er));
+  unsubs.push(DB.collection("c"+d).onSnapshot(snapInto(0,function(o){conts=rekeyCollege(o)}),er));
+  unsubs.push(DB.collection("n"+d).onSnapshot(snapInto(0,function(o){notes=canonDocs(o)}),er));
+  unsubs.push(DB.collection("r"+d).onSnapshot(snapInto(0,function(o){reents=rekeyCollege(o)}),er))}
 var lastDay=0;function resub(){if(D()!==lastDay){lastDay=D();subDay()}draw()}
 
 function ensureLogin(){return new Promise(function(resolve){
+  var tries=0;
   function ok(code,role){AUTH.code=code;AUTH.role=role;sv("bt_code",code);sv("bt_role_srv",role);shut("mLogin");resolve()}
   function tryCode(code,user){
     fetch("/api/me",{headers:{"x-code":code}}).then(function(r){if(r.status===200)return r.json();throw r.status})
      .then(function(j){ok(code,j.role)})
      .catch(function(st){
-       if(st===401||st===429){sv("bt_code","");if(user)setErr("lgErr",st===429?"Too many tries. Wait a few minutes.":"That code is not right.");open("mLogin")}
+       if(st===401||st===429){sv("bt_code","");setErr("lgErr",st===429?"Too many tries. Wait a few minutes and try again.":(user?"That code is not right. Check it with HQ.":""));open("mLogin")}
        else if(code&&ld("bt_role_srv")){AUTH.code=code;AUTH.role=ld("bt_role_srv");resolve()}
-       else{setErr("lgErr","No connection. Try again.");open("mLogin")}})}
+       else{open("mLogin");if(tries<18){tries++;setErr("lgErr","Waking up the server, please wait… ("+tries+")");setTimeout(function(){tryCode(code,user)},5000)}else setErr("lgErr","Cannot reach the server. Check your internet and tap Continue again.")}})}
   var c=ld("bt_code");if(c)tryCode(c,false);else open("mLogin");
-  $("lgGo").onclick=function(){var v=$("lgCode").value.trim();if(v)tryCode(v,true)}})}
+  $("lgGo").onclick=function(){var v=$("lgCode").value.trim();if(v){tries=0;setErr("lgErr","Checking…");tryCode(v,true)}}})}
 if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})});
 /* ---- new versions reach phones without anyone clearing anything ---- */
 function myBuild(){var m=document.querySelector('meta[name="build"]');return m?m.content:""}
@@ -499,9 +561,9 @@ draw();pending();
     if(!DB){banner("Not connected. Check your internet and reload.");return}
     var er=function(e){banner("Sync error: "+(e&&e.message||e))};
     DB.collection("staff").onSnapshot(snapInto(0,function(o){staff=o}),er);
-    DB.collection("colleges").onSnapshot(snapInto(0,function(o){colleges=o}),er);
-    DB.collection("config").onSnapshot(function(s){s.docs.forEach(function(d){var v=d.data()||{};if(d.id==="venues"&&v.list)venues=v.list;if(d.id==="fest")fest.start=v.start||""});resub()},er);
-    if(isEd)DB.collection("blacklist").onSnapshot(snapInto(0,function(o){black=o}),er);
+    DB.collection("colleges").onSnapshot(snapInto(0,function(o){colleges=rekeyName(o)}),er);
+    DB.collection("config").onSnapshot(function(s){s.docs.forEach(function(d){var v=d.data()||{};if(d.id==="venues"&&v.list)venues=v.list;if(d.id==="fest")fest.start=v.start||"";if(d.id==="collegelist"&&v.list)collegeList=v.list;if(d.id==="pipeline")pipe={from:v.from||"",to:v.to||""}});resub()},er);
+    if(isEd)DB.collection("blacklist").onSnapshot(snapInto(0,function(o){black=canonDocs(o)}),er);
     lastDay=D();subDay();draw();if(outbox().length){startOut();flush()}
   }catch(e){banner("Sync unavailable.")}
 })();
